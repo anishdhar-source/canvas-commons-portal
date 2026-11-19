@@ -1,13 +1,31 @@
-# The Canvas Commons — portal prototype
+# The Canvas Commons
 
-A clickable prototype of a curated marketplace for original canvas art by India's independent artists.
-Every artwork, artist, order and number in it is **sample data** for review.
+A curated marketplace for original canvas art by India's independent artists:
+storefront, artist desk and admin CMS.
 
-**Live site:** https://anishdhar-source.github.io/canvas-commons-portal/
+## How it's built
+- `docs/index.html`: the whole front end (storefront, artist desk, Studio admin CMS). With no API behind it (for example on GitHub Pages) it shows built-in sample data.
+- `src/worker.js`: the API, running on Cloudflare Workers. It handles logins, artist uploads, curation, orders, leads and site content.
+- `migrations/`: the Cloudflare D1 (SQLite) schema plus sample data.
+- Artwork photos are stored in Cloudflare Workers KV.
 
-## What's inside
-- **Collector:** home page, masonry shop with filters, artwork detail with "View in a room", cart and checkout (no real payment), commissions, art for spaces (curation, rental, designer trade, gifting), artist applications.
-- **Artist desk:** earnings, orders and payouts, add a new work.
-- **Studio admin:** launch gates, 12-month roadmap, curation queue, orders, B2B pipeline, unit economics calculator.
+## Run it locally
+```bash
+npm install
+npx wrangler d1 migrations apply canvas-commons --local
+echo "ADMIN_SETUP_CODE=choose-a-long-code" > .dev.vars
+npx wrangler dev
+```
+Open http://localhost:8787, then go to `#setup` to create the first admin account with the setup code.
 
-It is a single static `index.html` with no build step. Artworks are drawn in the browser on `<canvas>`.
+## Deploy to Cloudflare
+1. `npx wrangler d1 create canvas-commons`, then put the id into `wrangler.toml`
+2. `npx wrangler kv namespace create IMAGES`, then put the id into `wrangler.toml`
+3. `npx wrangler d1 migrations apply canvas-commons --remote`
+4. `npx wrangler secret put ADMIN_SETUP_CODE`
+5. `npx wrangler deploy`
+
+## Roles
+- **Admin:** approves artists and listings, manages orders, leads and home page content.
+- **Artist:** applies from the Artists page, then uploads works, sees orders and marks them packed or shipped.
+- **Collector:** browses and orders. Payments are in test mode until Razorpay is connected.

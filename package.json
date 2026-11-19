@@ -1,0 +1,14 @@
+{
+  "name": "canvas-commons-portal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "db:migrate:local": "wrangler d1 migrations apply canvas-commons --local",
+    "db:migrate:remote": "wrangler d1 migrations apply canvas-commons --remote",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.158.0"
+  }
+}
