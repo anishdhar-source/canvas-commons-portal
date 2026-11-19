@@ -1,20 +1,22 @@
 name = "canvas-commons"
 main = "src/worker.js"
 compatibility_date = "2025-06-01"
+workers_dev = true
+preview_urls = false
 
-# The storefront, artist desk and CMS are static files in docs/; /api/* is handled by the Worker.
-[assets]
-directory = "./docs"
-binding = "ASSETS"
-run_worker_first = ["/api/*"]
+# The storefront, artist desk and CMS (docs/index.html) are bundled into the Worker as text.
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = true
 
 [[d1_databases]]
 binding = "DB"
 database_name = "canvas-commons"
-database_id = "REPLACE_WITH_D1_ID"
+database_id = "264229ac-2c75-4a3b-bab4-04dfc05c4ddc"
 migrations_dir = "migrations"
 
 # Artwork photos
 [[kv_namespaces]]
 binding = "IMAGES"
-id = "REPLACE_WITH_KV_ID"
+id = "3f82303f2e8d4b9abd51c26593033d31"

@@ -1,5 +1,6 @@
 // The Canvas Commons API — Cloudflare Worker + D1 (database) + KV (artwork photos).
-// Static pages in docs/ are served by Workers Assets; every /api/* request lands here.
+// docs/index.html is bundled in and served for every non-API path; /api/* is the JSON API.
+import INDEX_HTML from '../docs/index.html';
 
 const PRINT_SIZES = { '12x16': 2499, '18x24': 3999, '24x36': 5999 };
 const ITEM_STATUSES = ['Paid', 'Packed', 'Shipped', 'Delivered', 'Return window', 'Payout released', 'Cancelled'];
@@ -473,7 +474,13 @@ async function route(req, env, url) {
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
-    if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(req);
+    if (!url.pathname.startsWith('/api/')) {
+      if (req.method !== 'GET' && req.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
+      return new Response(INDEX_HTML, { headers: {
+        'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=60',
+        'x-content-type-options': 'nosniff', 'referrer-policy': 'strict-origin-when-cross-origin', 'x-frame-options': 'SAMEORIGIN',
+      } });
+    }
     // Same-origin guard for state-changing requests.
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       const origin = req.headers.get('origin');

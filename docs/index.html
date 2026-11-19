@@ -1279,7 +1279,7 @@ drawShop=function(){const r=filtered();$('#shopGrid').innerHTML=r.length?r.map(a
 goShop=function(k,v){Object.assign(shopF,DEF_F);delete shopF.artist;shopF[k]=v;if(location.hash==='#shop')render();else location.hash='shop'};
 
 /* ================= LIVE BACKEND + CMS ================= */
-const LIVE_URL='https://canvas-commons.workers.dev';
+const LIVE_URL='https://canvas-commons.atraskianish.workers.dev';
 const LIVE={on:false,me:null,site:{}};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function api(path,opts={}){
