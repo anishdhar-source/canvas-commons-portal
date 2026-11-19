@@ -1,0 +1,1304 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="The Canvas Commons: prototype marketplace for original canvas art by India's independent artists. Sample data only.">
+<style>html,body{margin:0}body{font-family:system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>The Canvas Commons</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap">
+<style>
+:root{color-scheme:light}
+/* Layout: gallery-wall storefront with a role switch (Collector / Artist desk / Studio admin); canvases are painted live on <canvas>. */
+:root{
+  --wall:#F3F4F1;      /* gallery wall */
+  --paper:#FFFFFF;
+  --ink:#1B1D2A;       /* text */
+  --muted:#5D6172;
+  --line:#DCDDE3;
+  --indigo:#2C2F86;    /* accent: indigo pigment */
+  --indigo-soft:#E6E7F6;
+  --haldi:#D99A12;     /* turmeric highlight */
+  --haldi-soft:#FBF0D6;
+  --good:#1E7A4F; --good-soft:#DDF1E6;
+  --warn:#A9650A; --warn-soft:#FBEBD3;
+  --bad:#B23A3A;  --bad-soft:#F6E0E0;
+  --shadow:0 1px 2px rgba(20,22,40,.08),0 8px 24px rgba(20,22,40,.10);
+  --f-display:"Syne","Avenir Next","Segoe UI",sans-serif;
+  --f-body:"Instrument Sans","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+
+
+
+*{box-sizing:border-box}
+body{background:var(--wall);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--paper)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(30px,3.8vw,46px);line-height:1.08;font-weight:700}
+h2{font-size:clamp(24px,3vw,32px);line-height:1.1;font-weight:700}
+h3{font-size:18px;font-weight:700}
+p{margin:0}
+a{color:var(--indigo)}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--f-mono)}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:999px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--indigo);border-color:var(--indigo)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--ink);background:transparent}
+.btn.sm{padding:6px 12px;font-size:13px}
+.btn.haldi{background:var(--haldi);border-color:var(--haldi);color:#1B1D2A}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* proto ribbon + header */
+.ribbon{background:var(--indigo);color:#fff;font-size:12.5px}
+
+
+.ribbon .wrap{display:flex;gap:12px;justify-content:space-between;align-items:center;padding-block:7px;flex-wrap:wrap}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:var(--paper);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:18px;padding-block:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.logo-mark{width:30px;height:30px;border:2.5px solid var(--ink);position:relative;flex:none}
+.logo-mark::after{content:"";position:absolute;inset:5px;background:var(--haldi)}
+.logo b{font-family:var(--f-display);font-size:16px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.logo small{display:block;font-family:var(--f-mono);font-size:10px;color:var(--muted);letter-spacing:.08em}
+nav.main{display:flex;gap:4px;flex-wrap:wrap}
+nav.main a{text-decoration:none;color:var(--ink);padding:6px 10px;border-radius:8px;font-weight:500}
+nav.main a:hover{background:var(--wall)}
+nav.main a.on{background:var(--indigo-soft);color:var(--indigo)}
+.top-right{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--wall)}
+.seg button{border:0;background:transparent;padding:5px 12px;border-radius:999px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--paper);color:var(--ink);box-shadow:var(--shadow)}
+.cart-btn{position:relative}
+.cart-count{position:absolute;top:-6px;right:-6px;background:var(--haldi);color:#1B1D2A;font-size:11px;font-weight:700;min-width:19px;height:19px;border-radius:99px;display:grid;place-items:center;padding:0 4px}
+
+main{padding-block:28px 64px}
+section{margin-top:56px}
+.view>section:first-child{margin-top:0}
+.sec-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.sec-head p{max-width:60ch}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:40px;align-items:center}
+.hero-copy{display:grid;gap:20px;min-width:0}
+.hero-copy p.lead{font-size:18px;color:var(--muted);max-width:46ch}
+.hero-copy .actions{display:flex;gap:10px;flex-wrap:wrap}
+.hero-wall{position:relative;aspect-ratio:5/4;max-width:100%;background:linear-gradient(180deg,var(--paper),var(--wall));border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.hero-wall .hang{position:absolute;box-shadow:0 10px 22px rgba(0,0,0,.22),0 2px 4px rgba(0,0,0,.18);cursor:pointer;transition:transform .25s}
+.hero-wall .hang:hover{transform:translateY(-3px)}
+.hero-wall .hang img{display:block;width:100%;height:100%;object-fit:cover}
+.hero-wall .floor{position:absolute;left:0;right:0;bottom:0;height:13%;background:var(--line)}
+.hero-wall .bench{position:absolute;bottom:13%;left:30%;width:40%;height:6%;background:var(--ink);opacity:.85;border-radius:3px 3px 0 0}
+.hero-wall .tag{position:absolute;font-family:var(--f-mono);font-size:10px;background:var(--paper);border:1px solid var(--line);padding:2px 6px;color:var(--muted)}
+.stats-strip{display:flex;gap:28px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--line)}
+.stats-strip div b{display:block;font-family:var(--f-display);font-size:22px}
+.stats-strip div span{font-size:12.5px;color:var(--muted)}
+
+/* collections */
+.collections{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.coll{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px;display:grid;gap:8px;cursor:pointer;text-align:left}
+.coll:hover{border-color:var(--ink)}
+.coll .swatches{display:flex;height:46px;border-radius:3px;overflow:hidden}
+.coll .swatches img{flex:1;min-width:0;object-fit:cover}
+.coll b{font-family:var(--f-display);font-size:16px}
+.coll span{font-size:13px;color:var(--muted)}
+
+/* art grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:28px 22px}
+.card{display:grid;gap:10px;cursor:pointer;background:none;border:0;padding:0;text-align:left;min-width:0}
+.card .frame{background:var(--paper);border:1px solid var(--line);aspect-ratio:1/1;display:grid;place-items:center;padding:14%;border-radius:3px;position:relative;transition:border-color .2s}
+.card:hover .frame{border-color:var(--ink)}
+.card .frame img{max-width:100%;max-height:100%;box-shadow:0 8px 16px rgba(0,0,0,.2),0 1px 3px rgba(0,0,0,.2)}
+.card .meta{display:grid;gap:2px}
+.card .t{font-weight:600;line-height:1.3}
+.card .a{font-size:13px;color:var(--muted)}
+.card .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.card .p{font-family:var(--f-mono);font-size:14px;font-weight:500}
+.card .dims{font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:99px;background:var(--wall);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.founding{background:var(--haldi-soft);border-color:transparent;color:var(--warn)}
+.chip.signature{background:var(--indigo-soft);border-color:transparent;color:var(--indigo)}
+.chip.good{background:var(--good-soft);color:var(--good);border-color:transparent}
+.chip.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.chip.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.badge-pos{position:absolute;top:8px;left:8px}
+.sold-pos{position:absolute;top:8px;right:8px}
+
+/* shop */
+.shop{display:grid;grid-template-columns:240px 1fr;gap:32px;align-items:start}
+.filters{position:sticky;top:calc(env(safe-area-inset-top,0px) + 84px);display:grid;gap:20px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:18px}
+.filters fieldset{border:0;padding:0;margin:0;display:grid;gap:6px}
+.filters legend{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.filters label{display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+.input,select.input,textarea.input{width:100%;border:1px solid var(--line);background:var(--paper);border-radius:6px;padding:9px 11px}
+textarea.input{min-height:90px;resize:vertical}
+.toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap}
+.toolbar .input{max-width:280px}
+.empty{padding:48px 0;text-align:center;color:var(--muted)}
+
+/* trust / how */
+.trust{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);border-radius:6px;background:var(--paper)}
+.trust div{padding:20px;display:grid;gap:6px;border-right:1px solid var(--line)}
+.trust div:last-child{border-right:0}
+.trust b{font-family:var(--f-display);font-size:16px}
+.trust span{font-size:13.5px;color:var(--muted)}
+
+/* artists row */
+.artist-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.artist{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px;display:grid;gap:10px;align-content:start}
+.avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-weight:800;color:#fff;font-size:16px}
+.artist .top{display:flex;gap:12px;align-items:center}
+.artist b{display:block}
+.artist p{font-size:13.5px;color:var(--muted)}
+
+/* venues & events */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:22px;display:grid;gap:14px;align-content:start;min-width:0}
+.list{display:grid;gap:0}
+.list .li{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line);align-items:center;flex-wrap:wrap}
+.list .li:first-child{border-top:0}
+.date{font-family:var(--f-mono);font-size:12px;color:var(--indigo);font-weight:500}
+
+/* dialog */
+dialog{border:0;padding:0;border-radius:8px;background:var(--paper);color:var(--ink);width:min(1000px,calc(100vw - 24px));max-height:calc(100vh - 24px);box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(12,13,24,.55)}
+.dlg-close{position:absolute;top:10px;right:10px;z-index:2;border:1px solid var(--line);background:var(--paper);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;line-height:1}
+.detail{display:grid;grid-template-columns:1.1fr 1fr;min-height:520px}
+.detail .stage{background:var(--wall);display:grid;place-items:center;padding:36px;position:relative;min-width:0}
+.detail .stage img.solo{max-width:100%;max-height:440px;box-shadow:0 14px 30px rgba(0,0,0,.25),0 2px 4px rgba(0,0,0,.2)}
+.stage-toggle{position:absolute;top:14px;left:14px}
+.room{position:relative;width:100%;aspect-ratio:4/3;max-width:100%;background:linear-gradient(180deg,#E9E4DA 0 78%,#B9A98F 78% 100%);border-radius:3px;overflow:hidden}
+.room .art{position:absolute;left:50%;transform:translateX(-50%);box-shadow:0 8px 16px rgba(0,0,0,.3)}
+.room .sofa{position:absolute;left:50%;transform:translateX(-50%);bottom:12%;width:58.3%;height:17%;background:#4A4F63;border-radius:10px 10px 4px 4px}
+.room .sofa::before{content:"";position:absolute;left:-4%;right:-4%;bottom:0;height:55%;background:#3C4052;border-radius:8px}
+.room .scale{position:absolute;bottom:3%;left:3%;font-family:var(--f-mono);font-size:10.5px;color:#3b3b3b;background:rgba(255,255,255,.7);padding:2px 6px}
+.detail .info{padding:32px 28px;display:grid;gap:16px;align-content:start;overflow:auto;max-height:calc(100vh - 24px)}
+.spec{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13.5px}
+.spec dt{color:var(--muted)}
+.spec dd{margin:0;font-family:var(--f-mono);font-size:12.5px}
+.price-big{font-family:var(--f-display);font-size:30px;font-weight:700}
+.opts{display:grid;gap:8px}
+.opt{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:12px;cursor:pointer}
+.opt:has(input:checked){border-color:var(--indigo);background:var(--indigo-soft)}
+.opt input{accent-color:var(--indigo)}
+.opt .grow{flex:1;min-width:0}
+.opt small{display:block;color:var(--muted);font-size:12.5px}
+
+/* forms */
+.form{display:grid;gap:14px}
+.form .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:grid;gap:5px;min-width:0}
+.field label{font-size:13px;font-weight:600}
+.field .hint{font-size:12px;color:var(--muted)}
+.err{color:var(--bad);font-size:13px}
+.chips-pick{display:flex;gap:8px;flex-wrap:wrap}
+.chips-pick label{border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-size:13px;cursor:pointer;background:var(--paper)}
+.chips-pick label:has(input:checked){background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chips-pick input{position:absolute;opacity:0;pointer-events:none}
+.success{background:var(--good-soft);color:var(--good);border-radius:6px;padding:16px;display:grid;gap:4px}
+
+/* tabs */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:22px}
+.tabs button{border:0;background:none;padding:10px 14px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--haldi)}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--paper)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+.thumb{width:40px;height:40px;object-fit:cover;border-radius:2px;display:block}
+
+/* dashboards */
+.dash-head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kpi{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px;display:grid;gap:6px;min-width:0}
+.kpi span{font-size:12.5px;color:var(--muted)}
+.kpi b{font-family:var(--f-display);font-size:26px;font-variant-numeric:tabular-nums}
+.kpi small{font-size:12px;color:var(--muted)}
+.bar{height:6px;background:var(--wall);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--indigo);border-radius:99px}
+.bar.haldi i{background:var(--haldi)}
+.timeline{display:grid;grid-template-columns:repeat(6,1fr);gap:0;counter-reset:s}
+.timeline .st{padding:10px 8px 0;border-top:3px solid var(--line);font-size:12.5px;color:var(--muted)}
+.timeline .st.done{border-top-color:var(--good);color:var(--ink)}
+.timeline .st.now{border-top-color:var(--haldi);color:var(--ink);font-weight:600}
+.timeline .st b{display:block;font-family:var(--f-mono);font-size:11px;font-weight:500;color:var(--muted)}
+.phases{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.phase{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px;display:grid;gap:8px;align-content:start}
+.phase.now{border-color:var(--indigo);box-shadow:inset 0 0 0 1px var(--indigo)}
+.phase ul{margin:0;padding-left:18px;font-size:13px;color:var(--muted);display:grid;gap:3px}
+.gate{font-family:var(--f-mono);font-size:11.5px;padding-top:8px;border-top:1px dashed var(--line);display:grid;gap:6px}
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.col{background:var(--wall);border:1px solid var(--line);border-radius:6px;padding:10px;display:grid;gap:8px;align-content:start;min-height:120px;min-width:0}
+.col h4{margin:0 0 2px;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;display:flex;justify-content:space-between}
+.leadcard{background:var(--paper);border:1px solid var(--line);border-radius:5px;padding:10px;display:grid;gap:4px;font-size:13px}
+.leadcard b{font-size:13.5px}
+.leadcard .actions{display:flex;gap:6px;margin-top:4px}
+.econ{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.econ input[type=range]{width:100%;accent-color:var(--indigo)}
+.econ-row{display:flex;justify-content:space-between;padding:9px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:13.5px}
+.econ-row.total{font-weight:600;font-size:15px;border-top:2px solid var(--ink)}
+.neg{color:var(--bad)}.pos{color:var(--good)}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:999px;font-size:14px;opacity:0;transition:.25s;z-index:100;pointer-events:none;max-width:calc(100vw - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+footer{border-top:1px solid var(--line);background:var(--paper)}
+footer .wrap{padding-block:28px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+
+/* cart drawer */
+.cart-list{display:grid;gap:12px}
+.cart-item{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center}
+.cart-item img{width:56px;height:56px;object-fit:cover}
+
+/* ===== Marketplace skin: white gallery marketplace. Search-led header, category mega menu, masonry grids, carousels. ===== */
+:root{
+  --wall:#FFFFFF;--paper:#FFFFFF;--sand:#F6F5F2;--sand-2:#ECEAE5;--ink:#111111;--muted:#6B6B6B;--line:#E6E6E6;
+  --indigo:#111111;--indigo-soft:#F1F1F1;--haldi:#B3261E;--haldi-soft:#FBE9E7;--accent:#B3261E;
+  --band:#111111;--band-ink:#FFFFFF;--band-muted:#A8A8A8;--band-line:#2A2A2A;--wood:#B58A57;
+  --f-display:"Figtree","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Figtree","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"Figtree","Helvetica Neue",Arial,sans-serif;
+}
+
+
+body{font-size:14.5px;line-height:1.55}
+h1,h2,h3{font-weight:600;letter-spacing:-.015em}
+h1{font-size:clamp(32px,4.2vw,52px);line-height:1.05}
+h2{font-size:clamp(24px,2.6vw,32px);line-height:1.12}
+h3{font-size:19px;font-weight:600}
+.eyebrow{font-family:var(--f-body);font-size:11.5px;letter-spacing:.14em;font-weight:600}
+.btn{border-radius:0;font-weight:600;font-size:14px;padding:13px 26px}
+.btn.sm{padding:7px 14px;font-size:12.5px}
+.btn:hover{background:#333;border-color:#333;color:#fff}
+.btn.ghost:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.btn.white{background:#fff;color:#111;border-color:#fff}
+.btn.white:hover{background:transparent;color:#fff;border-color:#fff}
+.panel,.kpi,.phase,.col,.leadcard,.tbl-wrap,.filters,.coll,.artist,.success,dialog,.input,select.input,textarea.input,.opt,.trust{border-radius:0}
+.chip{border-radius:0;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+.chip.founding{background:var(--ink);color:var(--paper)}
+.chip.signature{background:var(--accent);color:#fff}
+.kpi b{font-weight:600}
+.tabs button.on{border-bottom-color:var(--ink)}
+.chips-pick label{border-radius:0}
+.seg{border-radius:0}.seg button{border-radius:0}
+.link-u{font-size:13px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:4px;background:none;border:0;cursor:pointer;padding:0}
+
+/* promo bar + header */
+.annc{background:var(--band);color:var(--band-ink);font-size:12.5px}
+.annc-in{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:8px;flex-wrap:wrap}
+.annc-msg{display:flex;align-items:center;gap:12px;font-weight:500}
+.annc-msg button{background:none;border:0;color:var(--band-muted);cursor:pointer;font-size:15px;padding:0 4px}
+.portal{background:transparent;border:1px solid var(--band-line);padding:2px;align-items:center}
+.portal span{font-size:10.5px;color:var(--band-muted);padding:0 8px;text-transform:uppercase;letter-spacing:.12em}
+.portal button{color:var(--band-muted);font-size:11.5px;padding:4px 10px}
+.portal button.on{background:var(--band-ink);color:var(--band);box-shadow:none}
+header.top{background:var(--paper);border-bottom:1px solid var(--line)}
+header.top .wrap{max-width:1360px;padding-block:0;display:block}
+.hrow1{display:flex;align-items:center;gap:28px;padding-block:16px}
+.wordmark{font-family:var(--f-display);font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--ink);white-space:nowrap}
+.wordmark i{font-style:normal;color:var(--accent)}
+.search{flex:1;display:flex;align-items:center;gap:10px;border:1px solid var(--line);padding:0 14px;height:44px;max-width:620px;background:var(--sand)}
+.search svg{width:18px;height:18px;flex:none;fill:none;stroke:var(--muted);stroke-width:1.8}
+.search input{border:0;background:transparent;flex:1;min-width:0;height:100%;font-size:14px;outline:none}
+.top-right{gap:18px;margin-left:auto;display:flex;align-items:center}
+.top-right .sell{font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none;white-space:nowrap}
+.ic{background:none;border:0;cursor:pointer;color:var(--ink);padding:2px;display:grid;place-items:center;position:relative}
+.ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.cart-count{background:var(--accent);color:#fff;top:-7px;right:-9px;font-size:10px;min-width:17px;height:17px}
+nav.main{display:flex;gap:0;flex-wrap:wrap;position:relative}
+nav.main>.mi{position:static}
+nav.main>.mi>a,nav.main>a{display:block;padding:12px 14px 13px;font-size:14px;font-weight:500;color:var(--ink);text-decoration:none;border-bottom:2px solid transparent;border-radius:0;white-space:nowrap}
+nav.main>.mi:first-child>a,nav.main>a:first-child{padding-left:0}
+nav.main>.mi>a:hover,nav.main>.mi>a.on,nav.main>a:hover,nav.main>a.on{background:none;border-bottom-color:var(--ink);color:var(--ink)}
+nav.main>.mi>a.red{color:var(--accent)}
+.mega{position:absolute;left:0;right:0;top:100%;background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line);box-shadow:0 18px 30px rgba(0,0,0,.08);padding:28px 0;display:none;z-index:40;grid-template-columns:repeat(4,1fr) 1.3fr;gap:28px}
+.mi:hover .mega,.mi:focus-within .mega{display:grid}
+.mega h5{margin:0 0 10px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+nav.main .mega a{display:block;font-size:14px;color:var(--ink);text-decoration:none;padding:4px 0;border-radius:0;font-weight:400}
+.slide[hidden]{display:none}
+.mega a:hover{text-decoration:underline}
+.mega .feat-img{display:grid;gap:8px;cursor:pointer}
+.mega .feat-img img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.mega .feat-img b{font-size:14px}
+.mega .feat-img span{font-size:12.5px;color:var(--muted)}
+
+/* layout */
+main.wrap{max-width:none;padding-left:0;padding-right:0;padding-block:0}
+.inner{max-width:1360px;margin:0 auto;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+.blk{padding-block:56px 0}
+.blk:last-child{padding-bottom:72px}
+.view:not(.boxed)>section,.view:not(.boxed)>div{margin-top:0}
+.view.boxed{max-width:1360px;margin:0 auto;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));padding-block:28px 88px}
+.rowhead{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.rowhead>div:first-child{display:grid;gap:4px;min-width:0}
+.rowhead p{color:var(--muted)}
+.arrows{display:flex;gap:8px;align-items:center}
+.arrows button{width:38px;height:38px;border:1px solid var(--line);background:var(--paper);cursor:pointer;font-size:16px;color:var(--ink)}
+.arrows a{font-size:13.5px;font-weight:600;color:var(--ink);margin-right:10px}
+
+/* hero carousel */
+.hero-c{position:relative;background:var(--sand);overflow:hidden}
+.slide{display:grid;grid-template-columns:1fr 1.25fr;min-height:480px}
+.slide .txt{padding:56px max(24px,env(safe-area-inset-left,0px)) 56px max(48px,env(safe-area-inset-left,0px));display:grid;gap:18px;align-content:center;min-width:0}
+.slide .txt p{font-size:16px;color:var(--muted);max-width:44ch}
+.slide .art{position:relative;min-height:420px}
+.slide .art .scene{position:absolute;inset:0}
+.slide .art .crop{position:absolute;inset:0;display:grid;grid-template-columns:1.4fr 1fr;gap:6px}
+.slide .art .crop img{width:100%;height:100%;object-fit:cover}
+.slide .art .crop div{display:grid;gap:6px;min-height:0}
+.dots{position:absolute;left:max(48px,env(safe-area-inset-left,0px));bottom:24px;display:flex;gap:8px;align-items:center}
+.dots button{width:28px;height:3px;border:0;background:var(--line);cursor:pointer;padding:0}
+.dots button.on{background:var(--ink)}
+.hero-arr{position:absolute;right:20px;bottom:20px;display:flex;gap:6px}
+.hero-arr button{width:40px;height:40px;background:#fff;color:#111;border:0;cursor:pointer;font-size:17px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+
+/* price tiles */
+.ptiles{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.ptile{border:0;padding:0;background:none;text-align:left;cursor:pointer;display:grid;gap:10px;color:var(--ink)}
+.ptile .im{aspect-ratio:1/1;overflow:hidden;background:var(--sand)}
+.ptile .im img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.ptile:hover .im img{transform:scale(1.04)}
+.ptile b{font-size:16px}
+.ptile span{font-size:13px;color:var(--muted)}
+
+/* artwork cards (shared) */
+.acard{position:relative;display:grid;gap:3px;min-width:0;cursor:pointer;background:none;border:0;padding:0;text-align:left;color:var(--ink)}
+.acard .im{position:relative;background:var(--sand);overflow:hidden}
+.acard .im img{display:block;width:100%;height:auto}
+.acard .heart{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.95);display:grid;place-items:center;opacity:0;transition:opacity .2s;border:0;cursor:pointer;color:#111}
+.acard .heart svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8}
+.acard .heart.on{opacity:1;color:var(--accent)}
+.acard .heart.on svg{fill:currentColor}
+.acard .vir{position:absolute;left:10px;bottom:10px;background:rgba(255,255,255,.95);color:#111;font-size:12px;font-weight:600;padding:6px 10px;opacity:0;transition:opacity .2s}
+.acard:hover .heart,.acard:hover .vir,.acard:focus-within .heart{opacity:1}
+.acard .badge{position:absolute;top:10px;left:10px}
+.acard .t1{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-weight:600;font-size:15px}
+.acard .t1 span:last-child{white-space:nowrap}
+.acard .ln{font-size:13px;color:var(--muted)}
+.acard .ln b{color:var(--ink);font-weight:500}
+.acard .pr{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin-top:2px;flex-wrap:wrap}
+.acard .pr .print{color:var(--muted)}
+.masonry{columns:4 230px;column-gap:28px}
+.masonry .acard{break-inside:avoid;margin-bottom:40px;width:100%}
+.hscroll{display:flex;gap:26px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;scrollbar-width:thin;align-items:flex-start}
+.hscroll .acard{flex:none;scroll-snap-align:start}
+.hscroll .acard .im{height:240px}
+.hscroll .acard .im img{height:100%;width:auto}
+
+/* collections */
+.colls{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.cl{border:0;padding:0;background:none;text-align:left;cursor:pointer;display:grid;gap:10px;color:var(--ink)}
+.cl .mos{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr;gap:4px;aspect-ratio:4/3}
+.cl .mos img{width:100%;height:100%;object-fit:cover;min-height:0}
+.cl .mos img:first-child{grid-row:span 2}
+.cl b{font-size:16px}
+.cl span{font-size:13px;color:var(--muted)}
+
+/* advisory */
+.advice{display:grid;grid-template-columns:1fr 1fr;background:var(--sand)}
+.advice .scene{min-height:440px}
+.advice .txt{padding:56px;display:grid;gap:18px;align-content:center;min-width:0}
+.advice ol{margin:0;padding:0;list-style:none;display:grid;gap:14px;counter-reset:a}
+.advice li{display:grid;grid-template-columns:30px 1fr;gap:12px;font-size:14px;counter-increment:a}
+.advice li::before{content:counter(a);width:28px;height:28px;border:1px solid var(--ink);border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700}
+.advice li b{display:block}
+
+/* one to watch */
+.watch{display:grid;grid-template-columns:1.2fr 1fr;gap:56px;align-items:center}
+.watch .big{background:var(--sand);display:grid;place-items:center;padding:48px;aspect-ratio:5/4}
+.watch .big .fr{width:min(420px,80%)}
+.watch .txt{display:grid;gap:16px;min-width:0}
+.watch .thumbs{display:flex;gap:12px;flex-wrap:wrap}
+.watch .thumbs button{width:92px;height:92px;border:0;padding:0;cursor:pointer;background:var(--sand)}
+.watch .thumbs img{width:100%;height:100%;object-fit:cover}
+
+/* browse lists */
+.browse{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;border-top:1px solid var(--line);padding-top:32px}
+.browse h4{margin:0 0 12px;font-size:15px}
+.browse button{display:block;background:none;border:0;padding:4px 0;font-size:14px;color:var(--muted);cursor:pointer;text-align:left}
+.browse button:hover{color:var(--ink);text-decoration:underline}
+
+/* stories */
+.stories{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.story{display:grid;gap:10px;cursor:pointer;background:none;border:0;padding:0;text-align:left;color:var(--ink)}
+.story .im{aspect-ratio:16/10;overflow:hidden;position:relative}
+.story .im .scene,.story .im img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.story small{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.story b{font-size:18px;line-height:1.3}
+
+/* trust row */
+.trustrow{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding-block:28px}
+.trustrow div{display:grid;grid-template-columns:36px 1fr;gap:14px;align-items:start}
+.trustrow svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.trustrow b{display:block;font-size:14.5px}
+.trustrow span{font-size:13px;color:var(--muted)}
+
+/* shop */
+.crumbs{font-size:12.5px;color:var(--muted);margin-bottom:10px}
+.crumbs a{color:var(--muted)}
+.shop{grid-template-columns:250px 1fr;gap:40px}
+.filters{border:0;padding:0;background:none;gap:0;top:calc(env(safe-area-inset-top,0px) + 130px);max-height:calc(100vh - 150px);overflow:auto}
+.filters fieldset{border-top:1px solid var(--line);padding:16px 0}
+.filters legend{font-family:var(--f-body);font-size:14px;letter-spacing:0;text-transform:none;color:var(--ink);font-weight:600;float:left;width:100%;margin-bottom:10px}
+.filters label{font-size:13.5px;color:var(--ink)}
+.filters input{accent-color:#111}
+.active-f{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.active-f button{border:1px solid var(--line);background:var(--sand);padding:5px 10px;font-size:12.5px;cursor:pointer;color:var(--ink)}
+.pager{display:flex;gap:6px;justify-content:center;margin-top:20px}
+.pager button{min-width:38px;height:38px;border:1px solid var(--line);background:var(--paper);cursor:pointer;color:var(--ink)}
+.pager button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* footer */
+footer{background:var(--sand);color:var(--ink);border-top:1px solid var(--line)}
+footer .wrap{display:block;max-width:1360px;padding-block:56px 28px;color:var(--muted);padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+.fgrid{display:grid;grid-template-columns:repeat(5,1fr) 1.6fr;gap:28px;font-size:13.5px}
+.fgrid h5{margin:0 0 12px;font-size:13px;color:var(--ink);font-weight:700}
+.fgrid a{display:block;color:var(--muted);text-decoration:none;padding:3px 0}
+.fgrid a:hover{color:var(--ink);text-decoration:underline}
+.fnews{display:grid;gap:10px;align-content:start}
+.fnews form{display:flex;gap:0}
+.fnews input{flex:1;min-width:0;border:1px solid var(--line);background:var(--paper);padding:11px 12px;font-size:14px}
+.fnews button{border:0;background:var(--ink);color:var(--paper);padding:0 16px;font-weight:600;cursor:pointer}
+.fbot{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-top:22px;margin-top:40px;border-top:1px solid var(--line);font-size:12px}
+
+@media (max-width:1100px){
+  .masonry{columns:3 200px}
+  .fgrid{grid-template-columns:repeat(3,1fr)}
+  .mega{grid-template-columns:repeat(3,1fr)}
+  .mega .feat-img{display:none}
+}
+@media (max-width:980px){
+  .slide,.advice,.watch{grid-template-columns:1fr}
+  .slide .txt{padding:36px 24px 64px}
+  .slide .art{min-height:320px}
+  .ptiles,.colls,.trustrow,.browse{grid-template-columns:repeat(2,1fr)}
+  .stories{grid-template-columns:1fr 1fr}
+  .advice .txt{padding:36px 24px}
+  .hrow1{flex-wrap:wrap;gap:14px}
+  .search{order:3;flex-basis:100%;max-width:none}
+  nav.main{flex-wrap:nowrap;overflow-x:auto}
+  .mega{display:none!important}
+  .shop{grid-template-columns:1fr}
+  .filters{max-height:none;position:static;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0 20px}
+}
+@media (max-width:640px){
+  .inner,.view.boxed,footer .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .masonry{columns:2 140px;column-gap:14px}
+  .masonry .acard{margin-bottom:26px}
+  .acard .t1{font-size:13.5px}
+  .ptiles,.colls{gap:12px}
+  .stories,.trustrow{grid-template-columns:1fr}
+  .fgrid{grid-template-columns:1fr 1fr}
+  .fnews{grid-column:1/-1}
+  .top-right .sell,.portal span{display:none}
+  .annc-in{justify-content:center}
+  .hscroll .acard .im{height:190px}
+  .dots{left:24px}
+}
+/* framed canvas */
+.fr{background:var(--wood);padding:6%;box-shadow:0 18px 30px -12px rgba(0,0,0,.35),0 3px 6px rgba(0,0,0,.18);display:block}
+.fr.black{--wood:#1d1b19}.fr.walnut{--wood:#5b3a24}.fr.white{--wood:#f4f2ee}
+.fr.raw{background:none;padding:0}
+.fr-in{background:#fff;display:block;height:100%}
+.fr.raw{box-shadow:5px 0 0 rgba(0,0,0,.14),0 22px 34px -14px rgba(0,0,0,.42),0 3px 6px rgba(0,0,0,.18)}
+.fr.raw .fr-in{background:none}
+.fr-in.mount{padding:9%}
+.fr img{display:block;width:100%;height:100%;object-fit:cover}
+
+/* rooms (depicted scenes, literal colours by design) */
+.scene{position:relative;overflow:hidden;background:linear-gradient(100deg,#EFE8DE 0%,#E6DCCD 58%,#D8CCBA 100%)}
+.scene .shaft{position:absolute;top:-10%;bottom:20%;width:16%;background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0));transform:skewX(-18deg);filter:blur(6px);pointer-events:none}
+.scene .hang{position:absolute;cursor:pointer;transition:transform .35s}
+.scene .hang:hover{transform:translateY(-4px)}
+.scene .table{position:absolute;left:30%;right:-4%;bottom:14%;height:3.2%;background:#6F4A2E;box-shadow:0 18px 30px rgba(0,0,0,.18)}
+.scene .floor{position:absolute;left:0;right:0;bottom:0;height:14%;background:linear-gradient(180deg,#B89C7C,#A88A69)}
+.scene .sofa{position:absolute;bottom:13%;height:17%;background:#D9CDBA;border-radius:16px 16px 6px 6px;box-shadow:0 10px 24px rgba(0,0,0,.15)}
+.scene .sofa::before{content:"";position:absolute;left:-5%;right:-5%;bottom:0;height:58%;background:#CFC1AC;border-radius:12px}
+.scene .lamp{position:absolute;width:13%;aspect-ratio:1;border-radius:50% 50% 46% 46%;background:radial-gradient(circle at 40% 35%,#fff,#ECE6DC 70%);box-shadow:0 10px 30px rgba(0,0,0,.08)}
+.scene .lamp::before{content:"";position:absolute;left:50%;bottom:100%;width:1.5px;height:400px;background:#2a2a2a}
+.scene .plant{position:absolute;bottom:14%;width:9%;aspect-ratio:1/2.2}
+.scene .plant::before{content:"";position:absolute;bottom:0;left:20%;right:20%;height:28%;background:#C9BBA6;border-radius:2px 2px 8px 8px}
+.scene .plant::after{content:"";position:absolute;bottom:26%;left:0;right:0;top:0;background:radial-gradient(ellipse at 50% 60%,#5E7352 0 40%,transparent 41%),radial-gradient(ellipse at 25% 35%,#6F8761 0 30%,transparent 31%),radial-gradient(ellipse at 75% 25%,#4F6545 0 28%,transparent 29%)}
+.hotspot{position:absolute;width:30px;height:30px;border-radius:50%;background:#fff;box-shadow:0 0 0 7px rgba(255,255,255,.35);display:grid;place-items:center;transform:translate(-50%,-50%);border:0;cursor:pointer}
+.hotspot::after{content:"";width:9px;height:9px;border-radius:50%;background:#141312}
+.scene .cap{position:absolute;right:16px;bottom:16px;background:rgba(255,255,255,.92);color:#141312;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;padding:7px 12px}
+
+
+
+@media (max-width:980px){
+  .hero{grid-template-columns:1fr}
+  .collections,.kpis,.phases,.kanban{grid-template-columns:repeat(2,1fr)}
+  .trust{grid-template-columns:1fr 1fr}
+  .trust div:nth-child(2){border-right:0}
+  .trust div:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .shop{grid-template-columns:1fr}
+  .filters{position:static;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .detail{grid-template-columns:1fr}
+  .detail .info{max-height:none}
+  .econ{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .split,.form .row2{grid-template-columns:1fr}
+  .collections,.trust,.kpis,.phases,.kanban{grid-template-columns:1fr}
+  .trust div{border-right:0;border-bottom:1px solid var(--line)}
+  .trust div:last-child{border-bottom:0}
+  .timeline{grid-template-columns:repeat(3,1fr);row-gap:12px}
+  .top-right{margin-left:0;width:100%;justify-content:space-between}
+  .grid{grid-template-columns:repeat(2,1fr);gap:20px 12px}
+  .detail .stage{padding:20px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="annc"><div class="wrap annc-in">
+  <span class="annc-msg"><button aria-label="Previous message" onclick="annc(-1)">‹</button><span id="anncText">Free insured shipping across India</span><button aria-label="Next message" onclick="annc(1)">›</button></span>
+  <div class="seg portal" role="tablist" aria-label="Switch portal"><span>Prototype view</span><button data-role="collector">Collector</button><button data-role="artist">Artist desk</button><button data-role="studio">Studio admin</button></div>
+</div></div>
+
+<header class="top"><div class="wrap">
+  <div class="hrow1">
+    <a class="logo" href="#home" aria-label="The Canvas Commons home"><span class="wordmark">the canvas commons<i>.</i></span></a>
+    <form class="search" id="hsearch" role="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="hq" type="search" placeholder="Search by artist, style, subject or city" aria-label="Search artworks"></form>
+    <div class="top-right">
+      <a class="sell" href="#artists">Sell your art</a>
+      <button class="ic" aria-label="Account" onclick="toast('Sign-in arrives with the live store')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button>
+      <button class="ic" aria-label="Favourites" onclick="showFavs()"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg></button>
+      <button class="ic cart-btn" id="cartBtn" aria-label="Open cart"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg><span class="cart-count" id="cartCount">0</span></button>
+    </div>
+  </div>
+  <nav class="main" id="nav"></nav>
+</div></header>
+
+<main class="wrap" id="app"></main>
+
+<footer><div class="wrap">
+  <div class="fgrid">
+    <div><h5>Buy</h5><a href="#shop">Original paintings</a><a href="#commission">Commissions</a><a href="#gifting">Gift boxes</a><a href="#rental">Art rental</a></div>
+    <div><h5>For spaces</h5><a href="#business">Offices &amp; cafés</a><a href="#rental">Hotels &amp; homestays</a><a href="#business" onclick="bizTab='designers'">Designer trade</a><a href="#commission">Free art advice</a></div>
+    <div><h5>For artists</h5><a href="#artists">Sell your art</a><a href="#artists">Artist tiers</a><a href="#desk">Artist desk</a><a href="#artists">Payouts &amp; rights</a></div>
+    <div><h5>About</h5><a href="#home">Our curators</a><a href="#home">Pop-ups &amp; shows</a><a href="#home">Walls that sell</a><a href="#home">Press</a></div>
+    <div><h5>Help</h5><a href="#home">Shipping &amp; insurance</a><a href="#home">7-day returns</a><a href="#home">Certificate of authenticity</a><a href="#home">Contact us</a></div>
+    <div class="fnews"><h5>Get first look at new artists</h5><span>One letter a month: new founding artists, pop-up invites and studio films.</span><form onsubmit="event.preventDefault();toast('Subscribed. First letter arrives in December.');this.reset()"><input id="newsEmail" type="email" required placeholder="Email address" aria-label="Email address"><button type="submit">Sign up</button></form></div>
+  </div>
+  <div class="fbot"><span>© 2026 The Canvas Commons Pvt Ltd (proposed) · Prototype with sample data</span><span>Hubs: Chittaranjan Park, New Delhi · Kolkata</span><span>Ecosystem partners: At Buzz · Asind Studio · Atraski Events · ATT</span><span>India · INR ₹</span></div>
+</div></footer>
+
+
+
+<dialog id="dlg"><button class="dlg-close" aria-label="Close" onclick="dlg.close()">×</button><div id="dlgBody"></div></dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600)}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const cm=i=>Math.round(i*2.54);
+
+/* ---------- sample data ---------- */
+const ARTISTS={
+ rb:{name:'Rhea Basu',city:'Kolkata',tier:'Founding',color:'#B4532A',bio:'Paints the Hooghly ghats at dusk in thick palette-knife layers.'},
+ ak:{name:'Arjun Kalra',city:'New Delhi',tier:'Signature',color:'#2C2F86',bio:'Large colour-field canvases about Delhi’s winter light.'},
+ ss:{name:'Sana Sheikh',city:'Lucknow',tier:'Founding',color:'#6B3FA0',bio:'Chikankari motifs re-drawn as quiet geometric abstracts.'},
+ mp:{name:'Meera Pillai',city:'Kochi',tier:'Roster',color:'#1E7A6B',bio:'Monsoon backwaters, painted from memory in blue and green.'},
+ td:{name:'Tenzin Dolma',city:'Gangtok',tier:'Founding',color:'#A3302F',bio:'Prayer-flag colours and mountain ridgelines, layer on layer.'},
+ vn:{name:'Vikram Nair',city:'Bengaluru',tier:'Roster',color:'#3E5C76',bio:'Gestural abstracts made after long city walks.'},
+ pj:{name:'Priyanka Jha',city:'Darbhanga',tier:'Founding',color:'#C0392B',bio:'Third-generation Madhubani painter, now working on canvas.'},
+ ia:{name:'Ishaan Ahuja',city:'Gurugram',tier:'Roster',color:'#7A6A2E',bio:'Architectural arches and stairwells in sun-baked tones.'}
+};
+const P={dusk:['#1F2340','#C8553D','#F2A541','#F7E3C3','#5B3758'],
+ winter:['#E8E4DA','#B8C4CF','#2C2F86','#8E9AAF','#D9A441'],
+ chikan:['#F4F1EC','#C9C3D9','#6B3FA0','#2F2A3B','#E3D5B8'],
+ monsoon:['#0F3B47','#1E7A6B','#7FB7A4','#D7E8DC','#244E7A'],
+ flag:['#F3EFE6','#2E5AAC','#F2C230','#C2362F','#2D8A4E'],
+ city:['#22252E','#E4572E','#F3F1EB','#76B041','#3E5C76'],
+ madhu:['#F6E7C8','#C0392B','#1B1D2A','#E3A21A','#2E7D32'],
+ arches:['#E9C9A0','#C47A47','#7A3B1E','#F4E6D2','#2F4858'],
+ indigo:['#14163A','#2C2F86','#7C82E0','#E8E6F5','#D99A12']};
+const WORKS=[
+ {id:'w1',t:'Ghat at Six O’Clock',a:'rb',price:42000,w:36,h:24,style:'orbs',pal:'dusk',med:'Acrylic & palette knife on canvas',yr:2026,rooms:['living'],prints:true,frame:'Stretched, unframed'},
+ {id:'w2',t:'Fog over Lodhi, II',a:'ak',price:135000,w:48,h:36,style:'fields',pal:'winter',med:'Oil on canvas',yr:2025,rooms:['living','office'],prints:false,frame:'Stretched, floated frame'},
+ {id:'w3',t:'Jaali Study 04',a:'ss',price:18500,w:20,h:20,style:'grid',pal:'chikan',med:'Acrylic on canvas',yr:2026,rooms:['bedroom'],prints:true,frame:'Stretched, unframed'},
+ {id:'w4',t:'Kuttanad, After Rain',a:'mp',price:26000,w:30,h:20,style:'waves',pal:'monsoon',med:'Acrylic on canvas',yr:2026,rooms:['living','hotel'],prints:true,frame:'Rolled (ships in tube)'},
+ {id:'w5',t:'Five Colours, Rumtek',a:'td',price:34000,w:24,h:30,style:'strokes',pal:'flag',med:'Mixed media on canvas',yr:2026,rooms:['office','cafe'],prints:true,frame:'Stretched, unframed'},
+ {id:'w6',t:'Walk 17 · Indiranagar',a:'vn',price:14500,w:18,h:24,style:'strokes',pal:'city',med:'Acrylic on canvas',yr:2026,rooms:['cafe','bedroom'],prints:false,frame:'Rolled (ships in tube)'},
+ {id:'w7',t:'Machhli Vivah',a:'pj',price:22000,w:24,h:24,style:'grid',pal:'madhu',med:'Natural pigment on canvas',yr:2026,rooms:['living','hotel'],prints:true,frame:'Stretched, unframed'},
+ {id:'w8',t:'Stairwell, Noon',a:'ia',price:9800,w:16,h:20,style:'arches',pal:'arches',med:'Acrylic on canvas',yr:2026,rooms:['bedroom','cafe'],prints:true,frame:'Rolled (ships in tube)'},
+ {id:'w9',t:'Indigo Hour',a:'ak',price:88000,w:40,h:40,style:'fields',pal:'indigo',med:'Oil on canvas',yr:2026,rooms:['office','hotel'],prints:false,frame:'Stretched, floated frame'},
+ {id:'w10',t:'Ganga, Low Tide',a:'rb',price:16500,w:20,h:16,style:'waves',pal:'dusk',med:'Acrylic on canvas',yr:2026,rooms:['bedroom'],prints:true,frame:'Rolled (ships in tube)'},
+ {id:'w11',t:'Ridge Line, Nathula',a:'td',price:58000,w:48,h:24,style:'waves',pal:'flag',med:'Oil on canvas',yr:2025,rooms:['living','office'],prints:true,frame:'Stretched, unframed'},
+ {id:'w12',t:'Courtyard Arches',a:'ia',price:31000,w:30,h:36,style:'arches',pal:'arches',med:'Acrylic on canvas',yr:2026,rooms:['hotel','cafe'],prints:true,frame:'Stretched, unframed'},
+ {id:'w13',t:'Sun Over Mithila',a:'pj',price:12500,w:16,h:16,style:'orbs',pal:'madhu',med:'Natural pigment on canvas',yr:2026,rooms:['bedroom','cafe'],prints:true,frame:'Rolled (ships in tube)'},
+ {id:'w14',t:'Backwater Blue',a:'mp',price:68000,w:36,h:48,style:'fields',pal:'monsoon',med:'Oil on canvas',yr:2025,rooms:['hotel','office'],prints:false,frame:'Stretched, unframed',sold:true},
+ {id:'w15',t:'Phool Patti 11',a:'ss',price:7200,w:14,h:18,style:'orbs',pal:'chikan',med:'Acrylic on canvas',yr:2026,rooms:['bedroom'],prints:true,frame:'Rolled (ships in tube)'},
+ {id:'w16',t:'Metro Line, Purple',a:'vn',price:24500,w:30,h:24,style:'strokes',pal:'indigo',med:'Acrylic on canvas',yr:2026,rooms:['office','cafe'],prints:true,frame:'Stretched, unframed'}
+];
+const STORIES={
+ w1:'Painted on the steps of Prinsep Ghat over three evenings. The orange is the last ten minutes before the lamps come on.',
+ w2:'Second in a series of five. Thin oil glazes, built up over a month, so the fog seems to move as the light in your room changes.',
+ w3:'Based on a jaali pattern from a 1930s chikan kurta that belonged to the artist’s grandmother.',
+ w4:'The paddy fields of Kuttanad sit below sea level. This is the hour after a downpour when everything turns silver.',
+ w5:'Blue, white, red, green, yellow: the five prayer-flag colours, torn and layered the way wind leaves them.',
+ w6:'Made the same evening as a 9 km walk through Indiranagar. One of a running series of 40 walks.',
+ w7:'A traditional Madhubani wedding motif, the fish pair, painted in natural pigments ground by hand.',
+ w8:'A stairwell in an old Gurugram haveli, at noon, when the shadows are shortest.',
+ w9:'One field of indigo with a thin turmeric seam. Meant for a quiet wall with nothing else on it.',
+ w10:'A small study for the larger Ganga series. Good above a bedside or a reading chair.',
+ w11:'The ridge at Nathu La seen from the road down. Painted wide so it reads like a horizon.',
+ w12:'Three arches from a courtyard in Old Gurugram. Warm enough for a café wall or a hotel lobby.',
+ w13:'A small Mithila sun, made as a study for a 6-foot commission.',
+ w14:'Sold to a homestay in Alleppey. Prints not offered.',
+ w15:'A single flower from a chikan border, enlarged until it becomes a shape.',
+ w16:'The Purple Line at night, from a seat by the window.'
+};
+WORKS.forEach(w=>w.story=STORIES[w.id]);
+
+/* ---------- canvas painter ---------- */
+const IMG={};
+function paint(w,maxPx=520){
+  const ratio=w.h/w.w, W=ratio>1?Math.round(maxPx/ratio):maxPx, H=Math.round(W*ratio);
+  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+  const r=mulberry32([...w.id].reduce((a,ch)=>a*31+ch.charCodeAt(0),7)), pal=P[w.pal], pick=()=>pal[Math.floor(r()*pal.length)];
+  g.fillStyle=pal[0];g.fillRect(0,0,W,H);
+  if(w.style==='fields'){
+    const n=2+Math.floor(r()*2);
+    for(let i=0;i<n;i++){const y=H*(.08+i*(.84/n)),h=H*(.84/n)-H*.04;g.save();g.filter='blur(6px)';g.globalAlpha=.9;g.fillStyle=pal[1+(i%(pal.length-1))];g.fillRect(W*.08,y,W*.84,h);g.restore();}
+    g.globalAlpha=.25;for(let i=0;i<400;i++){g.fillStyle=pick();g.fillRect(r()*W,r()*H,r()*30,1.5)}
+  }else if(w.style==='strokes'){
+    g.fillStyle=pal[0];g.fillRect(0,0,W,H);g.lineCap='round';
+    for(let i=0;i<120;i++){g.strokeStyle=pick();g.globalAlpha=.55+r()*.4;g.lineWidth=6+r()*26;g.beginPath();const x=r()*W,y=r()*H,a=r()*Math.PI;g.moveTo(x,y);g.quadraticCurveTo(x+Math.cos(a)*60,y+Math.sin(a)*60*r(),x+Math.cos(a)*(40+r()*120),y+Math.sin(a)*(40+r()*120));g.stroke();}
+  }else if(w.style==='orbs'){
+    const hz=H*(.55+r()*.15);const grd=g.createLinearGradient(0,0,0,hz);grd.addColorStop(0,pal[0]);grd.addColorStop(1,pal[4]||pal[1]);g.fillStyle=grd;g.fillRect(0,0,W,hz);
+    g.fillStyle=pal[2];g.beginPath();g.arc(W*(.35+r()*.3),hz*.62,Math.min(W,H)*.18,0,7);g.fill();
+    for(let i=0;i<6;i++){g.fillStyle=pal[1+(i%3)];g.globalAlpha=.85;g.fillRect(0,hz+i*(H-hz)/6,W,(H-hz)/6+1)}
+    g.globalAlpha=.6;g.strokeStyle=pal[3];g.lineWidth=2;for(let i=0;i<30;i++){const y=hz+r()*(H-hz);g.beginPath();g.moveTo(r()*W,y);g.lineTo(r()*W,y);g.stroke()}
+  }else if(w.style==='waves'){
+    const n=7;for(let i=0;i<n;i++){g.fillStyle=pal[i%pal.length];g.globalAlpha=1;g.beginPath();const base=H*(i/n)+H*.08;g.moveTo(0,H);g.lineTo(0,base);const amp=8+r()*H*.07,f=1+r()*2.5,ph=r()*6;for(let x=0;x<=W;x+=6)g.lineTo(x,base+Math.sin(x/W*Math.PI*f+ph)*amp);g.lineTo(W,H);g.fill()}
+  }else if(w.style==='grid'){
+    g.fillStyle=pal[0];g.fillRect(0,0,W,H);const b=W*.07;g.strokeStyle=pal[1];g.lineWidth=3;g.strokeRect(b*.5,b*.5,W-b,H-b);
+    for(let x=b;x<W-b;x+=b*.55){g.fillStyle=pal[(Math.floor(x)%3)+1];g.beginPath();g.moveTo(x,b*.55);g.lineTo(x+b*.25,b*.95);g.lineTo(x+b*.5,b*.55);g.fill();g.beginPath();g.moveTo(x,H-b*.55);g.lineTo(x+b*.25,H-b*.95);g.lineTo(x+b*.5,H-b*.55);g.fill()}
+    const cx=W/2,cy=H/2,s=Math.min(W,H)*.28;g.lineWidth=2.5;
+    for(let k=0;k<2;k++){g.save();g.translate(cx,cy+(k?s*.38:-s*.38));if(k)g.scale(-1,1);g.fillStyle=pal[1+k*2];g.beginPath();g.ellipse(0,0,s,s*.32,0,0,7);g.fill();g.beginPath();g.moveTo(s*.9,0);g.lineTo(s*1.35,-s*.3);g.lineTo(s*1.35,s*.3);g.fill();g.fillStyle=pal[0];g.beginPath();g.arc(-s*.6,-s*.05,s*.07,0,7);g.fill();g.strokeStyle=pal[0];for(let j=-4;j<5;j++){g.beginPath();g.arc(j*s*.15,0,s*.12,-1,1);g.stroke()}g.restore()}
+    for(let i=0;i<70;i++){g.fillStyle=pick();g.beginPath();g.arc(b+r()*(W-2*b),b+r()*(H-2*b),2+r()*3,0,7);g.globalAlpha=.6;g.fill()}
+  }else if(w.style==='arches'){
+    g.fillStyle=pal[0];g.fillRect(0,0,W,H);const n=3,aw=W/n;
+    for(let i=0;i<n;i++){const x=i*aw+aw*.15,ww=aw*.7,top=H*(.25+r()*.1);g.fillStyle=pal[2];g.beginPath();g.moveTo(x,H*.92);g.lineTo(x,top+ww/2);g.arc(x+ww/2,top+ww/2,ww/2,Math.PI,0);g.lineTo(x+ww,H*.92);g.fill();
+      g.fillStyle=pal[1];g.globalAlpha=.8;g.fillRect(x,H*.6,ww,H*.32);g.globalAlpha=1}
+    g.fillStyle=pal[4];g.fillRect(0,H*.92,W,H*.08);
+    g.fillStyle=pal[3];g.globalAlpha=.35;g.beginPath();g.moveTo(0,H*.2);g.lineTo(W,H*.55);g.lineTo(W,H*.62);g.lineTo(0,H*.3);g.fill();
+  }
+  // canvas weave texture
+  g.globalAlpha=.06;g.filter='none';for(let y=0;y<H;y+=3){g.fillStyle=y%6?'#000':'#fff';g.fillRect(0,y,W,1)}
+  g.globalAlpha=1;
+  return c.toDataURL('image/jpeg',.86);
+}
+WORKS.forEach(w=>IMG[w.id]=paint(w));
+
+/* ---------- state ---------- */
+let role=store.get('cc_role','collector');
+let cart=store.get('cc_cart',[]);
+const shopF={q:'',price:'all',room:'all',size:'all',tier:'all',sort:'featured'};
+const NAVS={collector:[['shop','Canvas art'],['artists','Artists'],['commission','Commissions'],['business','For spaces'],['rental','Art rental'],['gifting','Gifting']],
+ artist:[['desk','My desk'],['desk-add','Add a work'],['artists','Apply / tiers']],
+ studio:[['studio','Overview'],['studio-curation','Curation'],['studio-orders','Orders'],['studio-b2b','B2B pipeline'],['studio-econ','Unit economics']]};
+const ROLE_HOME={collector:'home',artist:'desk',studio:'studio'};
+
+/* ---------- shared renderers ---------- */
+function tierChip(t){return `<span class="chip ${t==='Founding'?'founding':t==='Signature'?'signature':''}">${t} artist</span>`}
+function card(w){const a=ARTISTS[w.a],r=w.h/w.w,wd=Math.min(100,135.7/r);return `<button class="card" onclick="openWork('${w.id}')">
+  <div class="frame">${a.tier!=='Roster'?`<span class="badge-pos">${tierChip(a.tier)}</span>`:''}${w.sold?'<span class="sold-pos chip bad">Sold</span>':''}${frame(w.id,'','','width:'+wd+'%')}</div>
+  <div class="meta"><div class="row"><span class="t">${w.t}</span><span class="p num">${inr(w.price)}</span></div><div class="a">${a.name} · ${w.w}×${w.h} in</div></div></button>`}
+
+/* ---------- views ---------- */
+const V={};
+/* ---------- editorial building blocks ---------- */
+const W_=id=>WORKS.find(x=>x.id===id);
+function finOf(w){return w.frame.includes('floated')?'black':'raw'}
+function frame(id,fin,mount,style=''){const w=W_(id);fin=fin||finOf(w);return `<span class="fr ${fin}" style="aspect-ratio:${w.w}/${w.h};${style}"><span class="fr-in ${mount?'mount':''}"><img src="${IMG[id]}" alt="${w.t} by ${ARTISTS[w.a].name}"></span></span>`}
+function scene(items,o={}){
+  const f=o.furn||'table';
+  return `<div class="scene" style="${o.style||''}">
+   <span class="shaft" style="left:${o.shaft??8}%"></span><span class="shaft" style="left:${(o.shaft??8)+20}%;width:9%;opacity:.7"></span>
+   ${items.map(it=>`<div class="hang" style="left:${it.x}%;top:${it.y}%;width:${it.w}%" onclick="openWork('${it.id}')" title="${W_(it.id).t}">${frame(it.id,it.fin||'',it.mount)}</div>`).join('')}
+   ${o.hot?`<button class="hotspot" style="left:${o.hot.x}%;top:${o.hot.y}%" aria-label="View ${W_(o.hot.id).t}" onclick="openWork('${o.hot.id}')"></button>`:''}
+   ${o.lamp?`<span class="lamp" style="left:${o.lamp[0]}%;top:${o.lamp[1]}%"></span>`:''}
+   ${o.plant!=null?`<span class="plant" style="left:${o.plant}%"></span>`:''}
+   ${f==='sofa'?`<span class="sofa" style="left:${o.sofa?.[0]??22}%;width:${o.sofa?.[1]??56}%"></span>`:f==='table'?'<span class="table"></span>':''}
+   <span class="floor"></span>
+   ${o.cap?`<span class="cap">${o.cap}</span>`:''}
+  </div>`}
+const ICON={
+ cert:'<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>',
+ truck:'<svg viewBox="0 0 24 24"><path d="M2 6h12v10H2zM14 10h4l4 3v3h-8z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>',
+ roll:'<svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="5"/><circle cx="8" cy="12" r="2"/></svg>',
+ hang:'<svg viewBox="0 0 24 24"><path d="M12 3v3M6 10l6-4 6 4"/><rect x="4" y="10" width="16" height="11"/></svg>',
+ back:'<svg viewBox="0 0 24 24"><path d="M9 14l-5-5 5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>',
+ hand:'<svg viewBox="0 0 24 24"><path d="M12 21c-5 0-8-3-8-8V8a2 2 0 0 1 4 0v3M8 11V5a2 2 0 0 1 4 0v6M12 11V4a2 2 0 0 1 4 0v7M16 11V7a2 2 0 0 1 4 0v6c0 5-3 8-8 8"/></svg>',
+ eye:'<svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+ brush:'<svg viewBox="0 0 24 24"><path d="M18 3l3 3-9 9-3-3z"/><path d="M9 12c-3 0-5 2-5 5 0 1-1 2-2 2 2 2 7 2 9-1 1-2 0-4-2-6z"/></svg>',
+ cam:'<svg viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="4"/></svg>',
+ box:'<svg viewBox="0 0 24 24"><path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>'};
+
+let artistFilter='all',lovedTab='best',spotA='rb',setI=0,cfg={fin:'wood',hooks:true};
+const SPOT={rb:{tag:'Rivers, ghats and the hour before the lamps come on.',q:'I paint the ten minutes when the river goes quiet.',series:'Ganga · Ghats at Dusk · Low Tide',kicker:'Founding artist · Kolkata'},
+ pj:{tag:'Mithila stories, ground from natural pigment.',q:'My grandmother painted on mud walls. I paint the same stories on canvas.',series:'Machhli Vivah · Suns of Mithila',kicker:'Founding artist · Darbhanga'},
+ ak:{tag:'Colour fields that behave like winter light.',q:'A big canvas should feel like weather in the room.',series:'Fog over Lodhi · Indigo Hour',kicker:'Signature artist · New Delhi'}};
+const SETS=[
+ {n:'Rivers of Bengal',by:'Rhea Basu',ids:['w1','w10','w13'],price:71000},
+ {n:'The Monsoon Wall',by:'Meera Pillai & Tenzin Dolma',ids:['w4','w11','w5'],price:118000},
+ {n:'Mithila Suite',by:'Priyanka Jha',ids:['w7','w13','w15'],price:41700},
+ {n:'Arches & City Walks',by:'Ishaan Ahuja & Vikram Nair',ids:['w12','w8','w6'],price:55300}];
+const FIN=[['raw','Rolled',0,'#e9e3d9'],['stretch','Stretched',1800,'#cfc4b3'],['black','Black float',4200,'#1d1b19'],['wood','Natural wood',3600,'#B58A57'],['walnut','Walnut',4800,'#5b3a24']];
+const ANNC=['Free insured shipping across India','Prototype · every work and price is sample data','Every original ships with a signed certificate','7-day returns on every canvas'];
+let anncI=0;function annc(d){anncI=(anncI+d+ANNC.length)%ANNC.length;const t=document.getElementById('anncText');if(t)t.textContent=ANNC[anncI]}
+setInterval(()=>annc(1),5000);
+
+function lovedIds(){if(lovedTab==='best')return['w1','w7','w4','w5'];if(lovedTab==='founding')return WORKS.filter(w=>ARTISTS[w.a].tier==='Founding'&&!w.sold).slice(2,6).map(w=>w.id);return WORKS.slice(-5).filter(w=>!w.sold).slice(0,4).map(w=>w.id)}
+
+V.home=()=>{
+ const sp=ARTISTS[spotA],S=SPOT[spotA],sw=WORKS.filter(w=>w.a===spotA),set=SETS[setI],f=FIN.find(x=>x[0]===cfg.fin),base=34000;
+ const tiles=Object.entries(ARTISTS).filter(([k,a])=>artistFilter==='all'||a.tier===artistFilter);
+ return `
+ <section class="split-hero">
+  <div class="copy">
+   <button class="code-chip" onclick="toast('Code COMMONS10 copied for your first original')"><b>COMMONS10</b><span>10% off your first original</span><span aria-hidden="true">→</span></button>
+   <span class="eyebrow">Original canvases · signed by the artist</span>
+   <h1>Stories told,<br><em>on canvas.</em></h1>
+   <p class="lead">Fog over Lodhi, jaali patterns from a grandmother’s kurta, the Hooghly at dusk. Original paintings by India’s independent artists, chosen by a working artist and shipped ready to hang.</p>
+   <div><a class="btn" href="#shop" onclick="goShop('tier','Founding')">Shop founding artists <span class="arr">→</span></a></div>
+   <div style="display:grid;gap:12px"><span class="eyebrow">In the edit</span>
+    <div class="edit-row">${['w3','w7','w12','w4'].map(i=>`<button onclick="openWork('${i}')" aria-label="${W_(i).t}"><img src="${IMG[i]}" alt=""></button>`).join('')}<button class="more" onclick="location.hash='shop'">+150<small>WORKS</small></button></div></div>
+   <div class="rating"><b>★★★★★</b>4.9 out of 5 from 120 early collectors (sample)</div>
+  </div>
+  ${scene([{id:'w3',x:12,y:12,w:20,fin:'wood',mount:true},{id:'w15',x:13,y:47,w:17,fin:'wood',mount:true},{id:'w2',x:38,y:13,w:44}],{shaft:2,hot:{id:'w2',x:60,y:33},lamp:[84,4],plant:4,cap:'Shown: Fog over Lodhi, II · 122 × 91 cm',style:'min-height:640px'})}
+ </section>
+
+ <div class="marquee" aria-hidden="true"><div class="track">${[0,1].map(()=>['Original, one of one','Signed certificate of authenticity','Insured shipping, ready to hang','7-day returns','Artists keep 70–75% of every sale','Delhi NCR & Kolkata hubs'].map(t=>`<span>${t}</span>`).join('')).join('')}</div></div>
+
+ <section class="band"><div class="inner reels-wrap">
+  <div style="display:grid;gap:18px"><span class="eyebrow">Walls that sell</span><h2>See it on <em>real walls.</em></h2><p class="muted">Our works hang in partner homestays, cafés and co-working spaces. See a piece in person, scan its QR code, and buy it off the wall.</p><div><button class="link-u" onclick="toast('Venue map opens with the live store')">Find a wall near you</button></div></div>
+  <div class="reels">${[
+    ['At Stay','Chittaranjan Park',[{id:'w7',x:28,y:20,w:44,fin:'wood',mount:true}],'sofa',[10,80]],
+    ['Brew Theory Café','Hauz Khas',[{id:'w16',x:16,y:16,w:30},{id:'w6',x:54,y:22,w:28}],'table'],
+    ['Desk & Co.','Salt Lake, Kolkata',[{id:'w11',x:10,y:24,w:80}],'table'],
+    ['Homestay suite','Kolkata',[{id:'w10',x:24,y:22,w:52,fin:'walnut'}],'sofa',[8,84]],
+    ['Pop-up preview','Delhi NCR, Mar 2027',[{id:'w9',x:16,y:14,w:68,fin:'black'}],'none']
+   ].map(([n,c,its,fu,so])=>`<button class="reel" onclick="openWork('${its[0].id}')">${scene(its,{furn:fu,sofa:so,shaft:10,style:'position:absolute;inset:0'})}<span class="pin">▶</span><span class="lbl"><b>${n}</b>${c}</span></button>`).join('')}</div>
+ </div></section>
+
+ <section class="band" style="padding-top:24px"><div class="inner">
+  <div class="head2"><div><span class="eyebrow">Shop by artist</span><h2>Meet the <em>artists</em></h2></div>
+   <div class="pills">${[['all','All'],['Founding','Founding'],['Signature','Signature'],['Roster','Roster']].map(([k,l])=>`<button class="${artistFilter===k?'on':''}" onclick="artistFilter='${k}';render()">${l}</button>`).join('')}<button class="circ" aria-label="Scroll left" onclick="document.getElementById('aScroll').scrollBy({left:-300,behavior:'smooth'})">‹</button><button class="circ" aria-label="Scroll right" onclick="document.getElementById('aScroll').scrollBy({left:300,behavior:'smooth'})">›</button></div></div>
+  <div class="a-scroll" id="aScroll">${tiles.map(([k,a])=>{const ws=WORKS.filter(w=>w.a===k);return `<button class="a-tile" onclick="goShop('artist','${k}')"><span class="ph"><img src="${IMG[ws[0].id]}" alt=""><span class="tg ${a.tier==='Roster'?'light':''}">${a.tier} · ${ws.length} works</span></span><b>${a.name}</b><span>${a.city} · ${a.bio.split(' ').slice(0,5).join(' ')}…</span></button>`}).join('')}</div>
+ </div></section>
+
+ <section class="band" style="padding-top:24px"><div class="inner">
+  <div class="head2"><div><span class="eyebrow">Most loved</span><h2>On <em>our walls</em></h2></div>
+   <div class="ul-tabs">${[['best','Bestsellers'],['founding','Founding artists'],['new','New in']].map(([k,l])=>`<button class="${lovedTab===k?'on':''}" onclick="lovedTab='${k}';render()">${l}</button>`).join('')}</div></div>
+  <div class="grid">${lovedIds().map(i=>card(W_(i))).join('')}</div>
+  <div style="text-align:center;margin-top:48px"><a class="btn ghost" href="#shop">Shop all canvases</a></div>
+ </div></section>
+
+ <section class="band sand"><div class="inner">
+  <div class="spot-tabs">${Object.keys(SPOT).map(k=>`<button class="${spotA===k?'on':''}" onclick="spotA='${k}';render()">${ARTISTS[k].name}</button>`).join('')}</div>
+  <div class="spot">
+   <div style="position:relative">${scene([{id:sw[0].id,x:Math.max(8,50-Math.min(60,sw[0].w*1.25)/2),y:12,w:Math.min(60,sw[0].w*1.25),fin:'wood',mount:sw[0].w<30}],{furn:'sofa',sofa:[14,64],lamp:[78,0],plant:84,shaft:6})}<span class="chip founding" style="position:absolute;top:12px;left:12px">Artist spotlight</span></div>
+   <div class="txt"><span class="eyebrow">${S.kicker}</span><h2 style="font-size:clamp(40px,5vw,64px)">${sp.name}</h2><span class="tag-line">${S.tag}</span><p class="muted">${sp.bio} Every work here is an original canvas, photographed at Asind Studio and in a real room before it lists.</p>
+    <blockquote>“${S.q}”</blockquote>
+    <div class="works">${sw.map(w=>`<button onclick="openWork('${w.id}')" aria-label="${w.t}">${frame(w.id,'wood',true)}</button>`).join('')}</div>
+    <span style="font-size:12.5px"><b>Series:</b> <span class="muted">${S.series}</span></span>
+    <div><button class="btn" onclick="goShop('artist','${spotA}')">Shop ${sp.name.split(' ')[0]}’s works <span class="arr">→</span></button></div>
+   </div></div>
+ </div></section>
+
+ <section class="config">
+  <div class="prev">${frame('w5',cfg.fin==='stretch'?'raw':cfg.fin,['wood','walnut','black'].includes(cfg.fin))}</div>
+  <div class="opts-side"><span class="eyebrow">Finish it your way</span><h2>Five finishes. <em>One original.</em></h2>
+   <p class="muted">Every canvas can ship rolled in a tube, stretched on bars, or framed by our partner framers in Delhi and Kolkata. Framed works ship crated and insured.</p>
+   <div class="finishes">${FIN.map(([k,l,p,c])=>`<button class="${cfg.fin===k?'on':''}" onclick="cfg.fin='${k}';render()"><i style="--c:${c}"></i>${l}<small class="muted">${p?'+'+inr(p):'Included'}</small></button>`).join('')}</div>
+   <label class="toggle"><input type="checkbox" id="cfgHooks" ${cfg.hooks?'checked':''} onchange="cfg.hooks=this.checked;render()"> Fitted with hooks, ready to hang</label>
+   <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap"><button class="btn" onclick="openWork('w5')">Choose this finish <span class="arr">→</span></button><span class="mono" style="font-size:13px">Five Colours, Rumtek · ${inr(base+f[2]+(cfg.hooks&&cfg.fin!=='raw'?0:0))}</span></div>
+  </div>
+ </section>
+
+ <section class="band dark"><div class="inner spaces">
+  <div class="txt"><span class="eyebrow">— For spaces</span><h2>The art behind<br><em>spaces people remember</em></h2><p class="muted">Curated walls for offices, cafés, homestays and hotels. Buy outright, or rent and rotate every 3–6 months with an option to buy.</p><div><a class="btn" href="#business">Art for your space <span class="arr">→</span></a></div></div>
+  <div class="sp-grid">${[['Offices','12–30 pieces'],['Cafés','rotating quarterly'],['Restaurants','one curator'],['Homestays','QR buy-off-the-wall'],['Boutique hotels','rental from 2.5%/mo'],['Co-working','branded floors'],['Clinics','calm palettes'],['Designers','10% trade rate'],['Gifting','Diwali 2027']].map(([b,s])=>`<div><b>${b}</b><span>${s}</span></div>`).join('')}</div>
+ </div></section>
+
+ <section class="band"><div class="inner sets">
+  <div class="side"><span class="eyebrow">Curated sets</span><h2>Gallery walls,<br><em>solved.</em></h2><p class="muted">Two to five works chosen to sit together, priced as one set, hung to a plan we send you.</p>
+   <ul>${SETS.map((s,i)=>`<li onclick="setI=${i};render()" style="${i===setI?'font-weight:600':''}">${s.n}<span>${i===setI?'Showing':s.ids.length+' works'}</span></li>`).join('')}</ul>
+   <div><button class="btn" onclick="toast('${set.n} set added to cart (prototype)')">Shop this set · ${inr(set.price)}</button></div></div>
+  ${scene([{id:set.ids[0],x:10,y:10,w:34,fin:'wood',mount:true},{id:set.ids[1],x:50,y:8,w:26,fin:'wood',mount:true},{id:set.ids[2],x:51,y:48,w:18,fin:'wood',mount:true}],{furn:'sofa',sofa:[12,58],plant:82,shaft:30,cap:set.n+' · '+set.by})}
+ </div></section>
+
+ <section class="band dark"><div class="inner">
+  <div class="steps-h"><h2>Curated by an artist.<br><em style="color:var(--band-muted)">Painted by hand.</em></h2><p class="muted">Every work is chosen by our Chief Curator, a practising artist. The artist keeps copyright; we photograph, tell the story, ship and insure.</p></div>
+  <div class="steps">${[['eye','Curated','Every artist is approved by our curator panel within 10 working days.'],['brush','Painted','One of one, on canvas, signed. Numbered certificate for every work.'],['cam','Photographed','Shot at Asind Studio and in a real room, so you see true scale.'],['box','Delivered','Rolled or crated, insured above ₹10,000, dispatched within 3 days.']].map(([ic,t,d],i)=>`<div><small>0${i+1}</small>${ICON[ic]}<b>${t}</b><p>${d}</p></div>`).join('')}</div>
+ </div></section>
+
+ <section><div class="feat">${[['truck','Free insured delivery','Across India, tracked end to end'],['cert','Signed certificate','Numbered and signed by the artist'],['roll','Rolled or crated','Tubes under 36 in, crates when framed'],['hang','Ready to hang','Hooks fitted on framed works'],['back','7-day returns','For damage or mismatch'],['hand','Artists paid fairly','No listing fees, paid within 15 days']].map(([ic,t,d])=>`<div><span class="ring">${ICON[ic]}</span><b>${t}</b><span>${d}</span></div>`).join('')}</div></section>`;
+};
+V.gifting=()=>{bizTab='gifting';return V.business()};
+V.rental=()=>{bizTab='hotels';return V.business()};
+
+function artistCard(k,a){const n=WORKS.filter(w=>w.a===k).length;return `<div class="artist"><div class="top"><div class="avatar" style="background:${a.color}">${a.name.split(' ').map(s=>s[0]).join('')}</div><div><b>${a.name}</b><span class="muted" style="font-size:13px">${a.city}</span></div></div>${tierChip(a.tier)}<p>${a.bio}</p><button class="btn ghost sm" onclick="goShop('artist','${k}')">${n} work${n>1?'s':''} available</button></div>`}
+
+V.shop=()=>`<div class="sec-head"><div><span class="eyebrow">The collection</span><h2>Original canvases</h2></div><p class="muted">Every work is one of a kind. Prices are set by the artist with our guidance and include insured shipping within India.</p></div>
+ <div class="shop">
+  <aside class="filters">
+   <fieldset><legend>Price</legend>${[['all','Any price'],['u15','Under ₹15,000'],['15-40','₹15,000–40,000'],['40+','₹40,000 and above']].map(([v,l])=>`<label><input type="radio" name="price" value="${v}" ${shopF.price===v?'checked':''}> ${l}</label>`).join('')}</fieldset>
+   <fieldset><legend>Wall size</legend>${[['all','Any size'],['small','Small (under 24 in)'],['medium','Medium (24–35 in)'],['large','Large (36 in +)']].map(([v,l])=>`<label><input type="radio" name="size" value="${v}" ${shopF.size===v?'checked':''}> ${l}</label>`).join('')}</fieldset>
+   <fieldset><legend>Room</legend>${[['all','Any room'],['living','Living room'],['bedroom','Bedroom'],['office','Office'],['cafe','Café / restaurant'],['hotel','Hotel / homestay']].map(([v,l])=>`<label><input type="radio" name="room" value="${v}" ${shopF.room===v?'checked':''}> ${l}</label>`).join('')}</fieldset>
+   <fieldset><legend>Artist tier</legend>${[['all','All artists'],['Founding','Founding'],['Signature','Signature'],['Roster','Roster']].map(([v,l])=>`<label><input type="radio" name="tier" value="${v}" ${shopF.tier===v?'checked':''}> ${l}</label>`).join('')}</fieldset>
+  </aside>
+  <div style="min-width:0">
+   <div class="toolbar"><input class="input" id="q" placeholder="Search title, artist or city" value="${shopF.q}"><div style="display:flex;gap:10px;align-items:center"><span class="muted" id="count"></span><select class="input" id="sort" style="width:auto"><option value="featured">Featured</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option><option value="big">Largest first</option></select></div></div>
+   ${shopF.artist?`<div style="margin-bottom:14px"><span class="chip signature">Artist: ${ARTISTS[shopF.artist].name}</span> <button class="btn ghost sm" onclick="delete shopF.artist;render()">Clear</button></div>`:''}
+   <div class="grid" id="shopGrid"></div>
+  </div></div>`;
+function filtered(){
+  let r=WORKS.filter(w=>{const a=ARTISTS[w.a],q=shopF.q.toLowerCase(),L=Math.max(w.w,w.h);
+   if(q&&!(w.t+' '+a.name+' '+a.city).toLowerCase().includes(q))return false;
+   if(shopF.artist&&w.a!==shopF.artist)return false;
+   if(shopF.price==='u15'&&w.price>=15000)return false;if(shopF.price==='15-40'&&(w.price<15000||w.price>40000))return false;if(shopF.price==='40+'&&w.price<40000)return false;
+   if(shopF.size==='small'&&L>=24)return false;if(shopF.size==='medium'&&(L<24||L>=36))return false;if(shopF.size==='large'&&L<36)return false;
+   if(shopF.room!=='all'&&!w.rooms.includes(shopF.room))return false;
+   if(shopF.tier!=='all'&&a.tier!==shopF.tier)return false;return true});
+  if(shopF.sort==='low')r.sort((a,b)=>a.price-b.price);if(shopF.sort==='high')r.sort((a,b)=>b.price-a.price);if(shopF.sort==='big')r.sort((a,b)=>b.w*b.h-a.w*a.h);
+  return r}
+function drawShop(){const r=filtered();$('#shopGrid').innerHTML=r.length?r.map(card).join(''):'<div class="empty">No works match these filters. Try a wider price band, or <a href="#commission">commission one</a>.</div>';$('#count').textContent=r.length+' works'}
+function bindShop(){$$('.filters input').forEach(i=>i.onchange=()=>{shopF[i.name]=i.value;drawShop()});$('#q').oninput=e=>{shopF.q=e.target.value;drawShop()};$('#sort').value=shopF.sort;$('#sort').onchange=e=>{shopF.sort=e.target.value;drawShop()};drawShop()}
+function goShop(k,v){Object.assign(shopF,{q:'',price:'all',room:'all',size:'all',tier:'all'});delete shopF.artist;shopF[k]=v;location.hash='shop';if(location.hash==='#shop')render()}
+
+/* artwork detail */
+function openWork(id){
+  const w=WORKS.find(x=>x.id===id),a=ARTISTS[w.a],rentLo=w.price*.025,rentHi=w.price*.03;
+  const printSizes=[[12,16,2499],[18,24,3999],[24,36,5999]];
+  $('#dlgBody').innerHTML=`<div class="detail">
+   <div class="stage"><div class="seg stage-toggle"><button class="on" id="vSolo">Artwork</button><button id="vRoom">On a wall</button></div>
+    <img class="solo" id="solo" src="${IMG[w.id]}" alt="${w.t}">
+    <div class="room" id="room" hidden><div class="art" style="width:${w.w/120*100}%;top:${Math.max(8,40-(w.h/90*100))}%;aspect-ratio:${w.w}/${w.h}"><img src="${IMG[w.id]}" alt="" style="width:100%;height:100%;display:block"></div><div class="sofa"></div><span class="scale">Wall shown 10 ft wide · sofa 7 ft · artwork ${w.w}×${w.h} in</span></div>
+   </div>
+   <div class="info">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${tierChip(a.tier)}${w.sold?'<span class="chip bad">Sold</span>':'<span class="chip good">Available · 1 of 1</span>'}</div>
+    <div><h2>${w.t}</h2><p class="muted" style="margin-top:4px">${a.name}, ${a.city} · ${w.yr}</p></div>
+    <p>${w.story}</p>
+    <dl class="spec"><dt>Medium</dt><dd>${w.med}</dd><dt>Size</dt><dd>${w.w} × ${w.h} in (${cm(w.w)} × ${cm(w.h)} cm)</dd><dt>Ships as</dt><dd>${w.frame}</dd><dt>Certificate</dt><dd>TCC-${w.yr}-${String(1040+WORKS.indexOf(w)*7)}</dd><dt>Dispatch</dt><dd>Within 3 days · insured${w.price>10000?' (above ₹10,000)':''}</dd></dl>
+    ${w.sold?`<div class="success" style="background:var(--warn-soft);color:var(--warn)"><b>This work has found a home.</b><span>Ask ${a.name.split(' ')[0]} for a similar piece through a commission.</span></div><a class="btn" href="#commission" onclick="dlg.close()">Commission something similar</a>`:`
+    <div class="opts" role="radiogroup">
+     <label class="opt"><input type="radio" name="buy" value="orig" checked><span class="grow"><b>Buy the original</b><small>Free insured shipping · 7-day returns</small></span><span class="mono">${inr(w.price)}</span></label>
+     <label class="opt"><input type="radio" name="buy" value="rent"><span class="grow"><b>Rent for your office or lobby</b><small>Rotate every 3–6 months, option to buy</small></span><span class="mono">${inr(rentLo)}–${inr(rentHi).slice(1)}/mo</span></label>
+     ${w.prints?`<label class="opt"><input type="radio" name="buy" value="print"><span class="grow"><b>Licensed canvas print</b><small><select class="input" id="printSize" style="margin-top:6px;padding:5px 8px">${printSizes.map(([pw,ph,pp])=>`<option value="${pp}">${pw}×${ph} in · ${inr(pp)}</option>`).join('')}</select></small></span><span class="mono">from ${inr(2499)}</span></label>`:''}
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="addCart">Add to cart</button><button class="btn ghost" onclick="dlg.close();location.hash='commission'">Ask for a commission</button></div>
+    <p class="muted" style="font-size:12.5px">The artist keeps copyright. Prints are made only with the artist’s opt-in and pay them a 20% royalty.</p>`}
+   </div></div>`;
+  dlg.showModal();
+  const vs=$('#vSolo'),vr=$('#vRoom');vs.onclick=()=>{$('#solo').hidden=false;$('#room').hidden=true;vs.classList.add('on');vr.classList.remove('on')};vr.onclick=()=>{$('#solo').hidden=true;$('#room').hidden=false;vr.classList.add('on');vs.classList.remove('on')};
+  const ac=$('#addCart');if(ac)ac.onclick=()=>{const m=$('input[name=buy]:checked').value;let item={id:w.id,kind:m};
+    if(m==='orig'){if(cart.some(c=>c.id===w.id&&c.kind==='orig')){toast('This original is already in your cart');return}item.price=w.price;item.label='Original'}
+    if(m==='rent'){item.price=Math.round(rentLo);item.label='Rental · per month'}
+    if(m==='print'){const s=$('#printSize');item.price=+s.value;item.label='Print · '+s.options[s.selectedIndex].text.split(' ·')[0]}
+    cart.push(item);saveCart();dlg.close();toast('Added to cart: '+w.t)};
+}
+
+/* cart + checkout */
+function saveCart(){store.set('cc_cart',cart);$('#cartCount').textContent=cart.length}
+function openCart(){
+  const total=cart.reduce((s,c)=>s+c.price,0);
+  $('#dlgBody').innerHTML=`<div style="padding:28px;display:grid;gap:18px;max-width:560px">
+   <h2>Your cart</h2>
+   ${cart.length?`<div class="cart-list">${cart.map((c,i)=>{const w=WORKS.find(x=>x.id===c.id);return `<div class="cart-item"><img src="${IMG[c.id]}" alt=""><div><b>${w.t}</b><div class="muted" style="font-size:13px">${ARTISTS[w.a].name} · ${c.label}</div></div><div style="text-align:right"><div class="mono">${inr(c.price)}</div><button class="btn ghost sm" style="margin-top:4px" onclick="cart.splice(${i},1);saveCart();openCart()">Remove</button></div></div>`}).join('')}</div>
+   <div class="econ-row total"><span>Total (incl. insured shipping)</span><span>${inr(total)}</span></div>
+   <form class="form" id="checkout">
+    <div class="row2"><div class="field"><label for="cn">Name</label><input class="input" id="cn" required value="Aditi Sharma"></div><div class="field"><label for="cp">Phone</label><input class="input" id="cp" required value="98100 00000"></div></div>
+    <div class="field"><label for="ca">Delivery address</label><input class="input" id="ca" required value="B-14, Greater Kailash II, New Delhi 110048"></div>
+    <div class="field"><label for="pay">Pay with</label><select class="input" id="pay"><option>UPI (Razorpay test mode)</option><option>Card (Razorpay test mode)</option><option>Net banking (Cashfree test mode)</option></select></div>
+    <button class="btn" type="submit">Pay ${inr(total)}</button>
+    <p class="muted" style="font-size:12.5px">Prototype: no payment is taken. Your money is held by the company until the 7-day return window closes, then the artist is paid within 15 days.</p>
+   </form>`:`<p class="muted">Your cart is empty.</p><a class="btn" href="#shop" onclick="dlg.close()">Browse the collection</a>`}
+  </div>`;
+  if(!dlg.open)dlg.showModal();
+  const f=$('#checkout');if(f)f.onsubmit=e=>{e.preventDefault();const id='TCC-'+(48210+Math.floor(Math.random()*900));
+    const items=cart.map(c=>{const w=WORKS.find(x=>x.id===c.id);return `<li>${w.t} · ${c.label} · ${c.kind==='orig'?(Math.max(w.w,w.h)<36&&w.frame.startsWith('Rolled')?'rolled in a tube':'crated'):c.kind==='print'?'printed to order, ships in 5 days':'install visit to be scheduled'}</li>`}).join('');
+    $('#dlgBody').innerHTML=`<div style="padding:32px;display:grid;gap:14px;max-width:560px"><span class="eyebrow">Order confirmed</span><h2>Thank you. Order ${id} is placed.</h2><p class="muted">The artist has been told and will pack within 3 days. You’ll get a tracking link from our courier partner.</p><ul style="margin:0;padding-left:18px;display:grid;gap:4px">${items}</ul><div class="timeline"><div class="st done"><b>Today</b>Paid</div><div class="st now"><b>≤ 3 days</b>Packed</div><div class="st"><b>+2–5 days</b>Shipped</div><div class="st"><b>Delivery</b>Delivered</div><div class="st"><b>+7 days</b>Return window</div><div class="st"><b>+15 days</b>Artist paid</div></div><button class="btn" onclick="dlg.close()">Done</button></div>`;
+    cart=[];saveCart()};
+}
+
+/* commission */
+V.commission=()=>`<section class="split" style="align-items:start">
+ <div style="display:grid;gap:18px;min-width:0"><span class="eyebrow">Custom commissions</span><h1 style="font-size:clamp(30px,4vw,46px)">Tell us about the wall. We’ll match you with the right artist.</h1>
+  <p class="muted" style="font-size:17px">Share the space, the size and the feeling you want. A curator suggests 2–3 artists within 3 working days, shares sketches, and manages the brief through to delivery.</p>
+  <div class="panel"><h3>How it works</h3><div class="list">
+   <div class="li"><span><b>1 · Brief</b> <span class="muted">Wall size, budget, mood, references</span></span></div>
+   <div class="li"><span><b>2 · Match</b> <span class="muted">2–3 artists shortlisted by our curator</span></span></div>
+   <div class="li"><span><b>3 · Sketch</b> <span class="muted">One round of sketches, 50% advance to start</span></span></div>
+   <div class="li"><span><b>4 · Paint &amp; deliver</b> <span class="muted">Usually 3–6 weeks, insured delivery</span></span></div>
+  </div></div></div>
+ <form class="panel form" id="commForm" style="padding:26px">
+  <h3>Start a brief</h3>
+  <div class="row2"><div class="field"><label for="cmName">Your name</label><input class="input" id="cmName" required placeholder="Full name"></div><div class="field"><label for="cmCity">City</label><input class="input" id="cmCity" required placeholder="e.g. Gurugram"></div></div>
+  <div class="field"><label>This is for</label><div class="chips-pick">${['My home','A gift','Office','Café / restaurant','Hotel / homestay','Custom portrait'].map((x,i)=>`<label><input type="radio" name="for" ${i===0?'checked':''}>${x}</label>`).join('')}</div></div>
+  <div class="row2"><div class="field"><label for="cmW">Wall width available (ft)</label><input class="input" id="cmW" type="number" min="2" max="40" value="6"></div>
+  <div class="field"><label for="cmB">Budget</label><select class="input" id="cmB"><option>₹10,000–25,000</option><option selected>₹25,000–60,000</option><option>₹60,000–1,50,000</option><option>Above ₹1,50,000</option></select></div></div>
+  <div class="field"><label>Mood</label><div class="chips-pick">${['Calm','Bold colour','Indian folk','Abstract','Landscape','Figurative','Monochrome'].map(x=>`<label><input type="checkbox" name="mood">${x}</label>`).join('')}</div></div>
+  <div class="field"><label for="cmArt">Preferred artist</label><select class="input" id="cmArt"><option>Match me with an artist</option>${Object.values(ARTISTS).map(a=>`<option>${a.name} · ${a.city}</option>`).join('')}</select></div>
+  <div class="field"><label for="cmNote">Anything else</label><textarea class="input" id="cmNote" placeholder="Colours in the room, what the space is used for, a story you want the painting to tell"></textarea></div>
+  <div class="field"><label for="cmRef">Photos of the wall (optional)</label><input id="cmRef" type="file" accept="image/*" multiple></div>
+  <div id="cmOut"></div>
+  <button class="btn" type="submit">Send brief</button>
+ </form></section>`;
+function bindCommission(){$('#commForm').onsubmit=e=>{e.preventDefault();const ft=+$('#cmW').value,sugg=Math.round(ft*12*0.6);
+ $('#cmOut').innerHTML=`<div class="success"><b>Brief TCC-BR-${1040+Math.floor(Math.random()*90)} received.</b><span>For a ${ft} ft wall we’d suggest a canvas about ${sugg} in wide (around 60% of the wall). A curator will send you 2–3 artist matches within 3 working days.</span></div>`;toast('Brief sent to the curation team')}}
+
+/* business */
+let bizTab='offices';
+V.business=()=>`<div class="sec-head"><div><span class="eyebrow">For business</span><h2>Art for offices, cafés, hotels and gifting</h2></div><p class="muted">One curator, one contract, original work from our roster. Buy outright, rent and rotate, or box it for gifting.</p></div>
+ <div class="tabs">${[['offices','Offices &amp; cafés'],['hotels','Hotels &amp; homestays · rental'],['designers','Interior designer trade'],['gifting','Corporate gifting']].map(([k,l])=>`<button class="${bizTab===k?'on':''}" onclick="bizTab='${k}';location.hash==='#business'?render():location.hash='business'">${l}</button>`).join('')}</div>
+ ${bizTab==='offices'?`<div class="split"><div class="panel"><h3>Curated walls for your space</h3><p class="muted">We visit, measure and propose a set that fits your brand and floor plan. Works are hung by our install team.</p>
+   <div class="list"><div class="li"><span>Curation and install fee</span><span class="mono">${inr(15000)}–${inr(50000).slice(1)} per project</span></div><div class="li"><span>Artworks</span><span class="mono">artist price, buy or rent</span></div><div class="li"><span>Typical project</span><span class="mono">12–30 pieces</span></div><div class="li"><span>Lead time</span><span class="mono">3–5 weeks</span></div></div></div>
+   ${bizForm('Office / café curation')}</div>`:''}
+ ${bizTab==='hotels'?`<div class="split"><div class="panel"><h3>Rental calculator</h3><p class="muted">Rent original work, rotate it every 3–6 months, and let guests buy straight off the wall with a QR code. Your venue earns a 5–10% referral on every sale.</p>
+   <div class="field"><label for="rPieces">Number of pieces: <b id="rPv">12</b></label><input type="range" id="rPieces" min="3" max="60" value="12" style="accent-color:var(--indigo)"></div>
+   <div class="field"><label for="rAvg">Average artwork value: <b id="rAv">${inr(30000)}</b></label><input type="range" id="rAvg" min="10000" max="150000" step="5000" value="30000" style="accent-color:var(--indigo)"></div>
+   <div><div class="econ-row"><span>Collection value</span><span id="rVal"></span></div><div class="econ-row"><span>Monthly rent (2.5–3%)</span><span id="rRent"></span></div><div class="econ-row"><span>Rotation</span><span>every 3–6 months</span></div><div class="econ-row total"><span>Annual</span><span id="rYear"></span></div></div></div>
+   ${bizForm('Hotel / homestay rental')}</div>`:''}
+ ${bizTab==='designers'?`<div class="split"><div class="panel"><h3>Trade programme</h3><p class="muted">For interior designers and architects. Get a dedicated curator, hold works for client presentations, and a trade discount on every original.</p>
+   <div class="list"><div class="li"><span>Trade discount</span><span class="mono">10% on originals</span></div><div class="li"><span>Hold for client</span><span class="mono">up to 7 days</span></div><div class="li"><span>Curated sets</span><span class="mono">sent as a PDF board in 48 h</span></div><div class="li"><span>Commissions</span><span class="mono">priority matching</span></div></div></div>
+   ${bizForm('Designer trade account')}</div>`:''}
+ ${bizTab==='gifting'?`<div class="split"><div class="panel"><h3>Festive and corporate boxes</h3><p class="muted">Small originals and signed canvas prints, boxed with the artist’s story card. Launching for Diwali 2027.</p>
+   <div class="list"><div class="li"><span><b>Print box</b><br><span class="muted">12×16 in licensed print + story card</span></span><span class="mono">${inr(2999)}</span></div><div class="li"><span><b>Mini original</b><br><span class="muted">10×10 in original canvas</span></span><span class="mono">${inr(5500)}</span></div><div class="li"><span><b>Leadership set</b><br><span class="muted">Original up to 20 in, framed</span></span><span class="mono">from ${inr(15000)}</span></div><div class="li"><span>Volume pricing</span><span class="mono">50+ boxes</span></div></div></div>
+   ${bizForm('Corporate gifting (Diwali 2027)')}</div>`:''}`;
+function bizForm(t){return `<form class="panel form" id="bizForm"><h3>Request a proposal</h3><input type="hidden" id="bzType" value="${t}">
+ <div class="row2"><div class="field"><label for="bzCo">Company</label><input class="input" id="bzCo" required placeholder="Company or venue name"></div><div class="field"><label for="bzCity">City</label><input class="input" id="bzCity" required placeholder="City"></div></div>
+ <div class="row2"><div class="field"><label for="bzName">Your name</label><input class="input" id="bzName" required></div><div class="field"><label for="bzQty">Pieces / boxes</label><input class="input" id="bzQty" type="number" value="12" min="1"></div></div>
+ <div class="field"><label for="bzNote">About the space</label><textarea class="input" id="bzNote" placeholder="Area, number of walls, brand colours, timeline"></textarea></div>
+ <div id="bzOut"></div><button class="btn" type="submit">Request proposal</button></form>`}
+function bindBusiness(){const f=$('#bizForm');f.onsubmit=e=>{e.preventDefault();LEADS.unshift({n:$('#bzCo').value+', '+$('#bzCity').value,type:$('#bzType').value,pcs:+$('#bzQty').value,val:+$('#bzQty').value*28000,st:0});
+  $('#bzOut').innerHTML='<div class="success"><b>Request received.</b><span>Our B2B team will call within 1 working day to set up a site visit. (In this prototype it now appears in Studio admin → B2B pipeline.)</span></div>';toast('Proposal request sent')};
+ const rp=$('#rPieces');if(rp){const upd=()=>{const n=+rp.value,v=+$('#rAvg').value,val=n*v;$('#rPv').textContent=n;$('#rAv').textContent=inr(v);$('#rVal').textContent=inr(val);$('#rRent').textContent=inr(val*.025)+'–'+inr(val*.03).slice(1);$('#rYear').textContent=inr(val*.025*12)+'–'+inr(val*.03*12).slice(1)};rp.oninput=upd;$('#rAvg').oninput=upd;upd()}}
+
+/* artists public + apply */
+V.artists=()=>`<div class="sec-head"><div><span class="eyebrow">Artists</span><h2>The roster</h2></div><p class="muted">Every artist applies or is invited, and every one is approved by our Chief Curator. We keep the roster small enough that each artist actually sells.</p></div>
+ <div class="artist-row">${Object.entries(ARTISTS).map(([k,a])=>artistCard(k,a)).join('')}</div>
+ <section><div class="sec-head"><div><span class="eyebrow">For artists</span><h2>How our tiers work</h2></div><p class="muted">No listing fees, ever. You keep copyright and sell non-exclusively unless you join as a Signature artist.</p></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Tier</th><th>Who</th><th>Commission</th><th>Exclusivity</th><th>What you get</th></tr></thead><tbody>
+   <tr><td>${tierChip('Founding')}</td><td>The first 25, hand-picked</td><td class="mono">25% year 1, then 30%</td><td>Non-exclusive</td><td>Launch campaign, studio shoot, pop-up wall space</td></tr>
+   <tr><td>${tierChip('Roster')}</td><td>Approved applicants</td><td class="mono">30%</td><td>Non-exclusive</td><td>Listing, marketing, B2B placement</td></tr>
+   <tr><td>${tierChip('Signature')}</td><td>Top sellers, by invitation</td><td class="mono">25–30%</td><td>Exclusive on canvas for 12 months</td><td>Solo shows, first pick of B2B projects, stronger price support</td></tr>
+  </tbody></table></div></section>
+ <section class="split" style="align-items:start">
+  <div class="panel"><h3>From application to payout</h3><div class="list">
+   <div class="li"><span><b>Apply</b> <span class="muted">Portfolio of 10+ canvases, past prices, Instagram</span></span></div>
+   <div class="li"><span><b>Curate</b> <span class="muted">Panel review within 10 working days</span></span></div>
+   <div class="li"><span><b>Sign</b> <span class="muted">Consignment agreement, IP licence, price parity</span></span></div>
+   <div class="li"><span><b>List</b> <span class="muted">Studio and room shoot at Asind Studio; you approve the copy</span></span></div>
+   <div class="li"><span><b>Sell &amp; get paid</b> <span class="muted">Within 15 days after the buyer’s 7-day return window</span></span></div></div></div>
+  <form class="panel form" id="applyForm"><h3>Apply to join</h3>
+   <div class="row2"><div class="field"><label for="apName">Name</label><input class="input" id="apName" required></div><div class="field"><label for="apCity">City</label><input class="input" id="apCity" required></div></div>
+   <div class="row2"><div class="field"><label for="apIg">Instagram</label><input class="input" id="apIg" placeholder="@yourhandle" required></div><div class="field"><label for="apN">Canvases in portfolio</label><input class="input" id="apN" type="number" value="8" min="0"></div></div>
+   <div class="field"><label for="apPrice">Your usual canvas price range</label><select class="input" id="apPrice"><option>Under ₹5,000</option><option selected>₹5,000–25,000</option><option>₹25,000–75,000</option><option>Above ₹75,000</option></select></div>
+   <div class="field"><label for="apFiles">Portfolio images</label><input id="apFiles" type="file" accept="image/*" multiple><span class="hint">Send at least 10 canvases. Phone photos are fine for review.</span></div>
+   <div id="apOut"></div><button class="btn" type="submit">Submit application</button></form>
+ </section>`;
+function bindArtists(){$('#applyForm').onsubmit=e=>{e.preventDefault();const n=+$('#apN').value,out=$('#apOut');
+ if(n<10){out.innerHTML=`<p class="err">We need a portfolio of at least 10 canvases to review. You entered ${n}. Add more and submit again.</p>`;return}
+ const lowNote=$('#apPrice').value.startsWith('Under')?' Works under ₹5,000 usually do better as prints and gifting; the curator will talk you through this.':'';
+ APPS.unshift({n:$('#apName').value,city:$('#apCity').value,ig:$('#apIg').value,works:n,range:$('#apPrice').value,style:'—',st:'pending',days:0});
+ out.innerHTML=`<div class="success"><b>Application received.</b><span>Our panel reviews within 10 working days.${lowNote} (It now appears in Studio admin → Curation.)</span></div>`;toast('Application submitted')}}
+
+/* ---------- artist desk ---------- */
+const ME='rb';
+const MY_SALES=[{id:'TCC-48112',w:'w10',date:'02 Nov 2026',price:16500,st:5},{id:'TCC-48177',w:'w1',date:'11 Nov 2026',price:42000,st:4},{id:'TCC-48203',w:'print',t:'Ghat at Six O’Clock · print 18×24',date:'16 Nov 2026',price:3999,st:2}];
+let MY_WORKS=[
+ {t:'Ghat at Six O’Clock',img:'w1',price:42000,st:'Sold · in return window'},
+ {t:'Ganga, Low Tide',img:'w10',price:16500,st:'Sold · paid out'},
+ {t:'Kumartuli, Before Puja',img:null,price:38000,st:'Awaiting studio shoot'},
+ {t:'Howrah at 4 am',img:null,price:24000,st:'In curation review'}];
+V.desk=()=>{const a=ARTISTS[ME],earned=MY_SALES.reduce((s,x)=>s+(x.w==='print'?x.price*.2:x.price*.75),0);
+ return `<div class="dash-head"><div><span class="eyebrow">Artist desk</span><h2>Namaste, ${a.name.split(' ')[0]}</h2><p class="muted">${a.city} · ${tierChip(a.tier)} · 25% commission until Mar 2028, then 30%</p></div><a class="btn" href="#desk-add">Add a new work</a></div>
+ <div class="kpis">
+  <div class="kpi"><span>Works listed</span><b>${MY_WORKS.length}</b><small>2 sold · 2 in progress</small></div>
+  <div class="kpi"><span>Your earnings, Nov</span><b class="num">${inr(earned)}</b><small>75% of originals + 20% print royalty</small></div>
+  <div class="kpi"><span>Next payout</span><b class="num">${inr(42000*.75)}</b><small>Releases 3 Dec, after return window</small></div>
+  <div class="kpi"><span>Page views, 30 days</span><b class="num">2,318</b><small>412 from At Stay QR scans</small></div>
+ </div>
+ <section style="margin-top:28px"><div class="sec-head"><h3>Orders &amp; payouts</h3><span class="muted" style="font-size:13px">Pack and dispatch within 3 days, or drop at the Kolkata hub</span></div>
+ <div class="tbl-wrap"><table><thead><tr><th>Order</th><th>Work</th><th>Date</th><th class="r">Sale</th><th class="r">You get</th><th>Status</th></tr></thead><tbody>
+ ${MY_SALES.map(s=>{const w=WORKS.find(x=>x.id===s.w),you=s.w==='print'?s.price*.2:s.price*.75;return `<tr><td class="mono">${s.id}</td><td>${w?w.t:s.t}</td><td class="mono">${s.date}</td><td class="r mono">${inr(s.price)}</td><td class="r mono">${inr(you)}</td><td>${['','','<span class="chip">Printing</span>','','<span class="chip warn">Return window · ends 26 Nov</span>','<span class="chip good">Paid 21 Nov</span>'][s.st]}</td></tr>`}).join('')}
+ </tbody></table></div></section>
+ <section style="margin-top:28px"><h3 style="margin-bottom:14px">Order TCC-48177 · where it is</h3>
+  <div class="panel"><div class="timeline"><div class="st done"><b>11 Nov</b>Paid</div><div class="st done"><b>12 Nov</b>Packed (crated)</div><div class="st done"><b>13 Nov</b>Shipped</div><div class="st done"><b>19 Nov</b>Delivered</div><div class="st now"><b>till 26 Nov</b>Return window</div><div class="st"><b>by 3 Dec</b>Payout ${inr(31500)}</div></div></div></section>
+ <section style="margin-top:28px"><h3 style="margin-bottom:14px">My works</h3>
+ <div class="tbl-wrap"><table><thead><tr><th></th><th>Title</th><th class="r">Price</th><th>Status</th><th>Prints</th></tr></thead><tbody>
+  ${MY_WORKS.map(w=>`<tr><td>${w.img?`<img class="thumb" src="${IMG[w.img]}" alt="">`:'<div class="thumb" style="background:var(--wall);border:1px dashed var(--line)"></div>'}</td><td>${w.t}</td><td class="r mono">${inr(w.price)}</td><td><span class="chip ${w.st.startsWith('Sold')?'good':w.st.startsWith('In')?'warn':''}">${w.st}</span></td><td>${w.img?'<span class="chip good">Opted in · 20% royalty</span>':'<span class="muted">—</span>'}</td></tr>`).join('')}
+ </tbody></table></div></section>`};
+V['desk-add']=()=>`<div class="dash-head"><div><span class="eyebrow">Artist desk</span><h2>Add a new work</h2><p class="muted">We shoot every work in the studio and in a room setting, and write its story with you.</p></div></div>
+ <div class="split" style="align-items:start"><form class="panel form" id="addForm">
+  <div class="field"><label for="nwT">Title</label><input class="input" id="nwT" required value="Kalighat, Monsoon"></div>
+  <div class="row2"><div class="field"><label for="nwW">Width (in)</label><input class="input" id="nwW" type="number" value="30" min="6"></div><div class="field"><label for="nwH">Height (in)</label><input class="input" id="nwH" type="number" value="24" min="6"></div></div>
+  <div class="row2"><div class="field"><label for="nwM">Medium</label><select class="input" id="nwM"><option>Acrylic on canvas</option><option>Oil on canvas</option><option>Mixed media on canvas</option><option>Natural pigment on canvas</option></select></div><div class="field"><label for="nwF">Ships as</label><select class="input" id="nwF"><option>Rolled (tube)</option><option>Stretched, unframed</option><option>Framed (crated)</option></select></div></div>
+  <div class="field"><label for="nwP">Your price (₹)</label><input class="input" id="nwP" type="number" value="28000" min="0" step="500"><span class="hint">Keep it the same as on your own channels (price parity).</span></div>
+  <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="nwPr" checked> Offer licensed canvas prints (you earn a 20% royalty)</label>
+  <div class="field"><label for="nwS">The story behind it</label><textarea class="input" id="nwS">Painted from the bridge over Adi Ganga during the August rains.</textarea></div>
+  <button class="btn" type="submit">Submit for curation</button></form>
+  <div class="panel"><h3>What you’ll receive</h3><div id="nwCalc"></div><div id="nwWarn"></div><p class="muted" style="font-size:13px">Payout reaches your bank within 15 days after the buyer’s 7-day return window closes. Monthly statements arrive on the 5th.</p></div></div>`;
+function bindAdd(){const upd=()=>{const p=+$('#nwP').value||0,big=Math.max(+$('#nwW').value,+$('#nwH').value);
+ $('#nwCalc').innerHTML=`<div class="econ-row"><span>Sale price</span><span>${inr(p)}</span></div><div class="econ-row"><span>Commission (Founding, 25%)</span><span class="neg">−${inr(p*.25).slice(1)}</span></div><div class="econ-row total"><span>You receive</span><span class="pos">${inr(p*.75)}</span></div><div class="econ-row"><span>Shipping method</span><span>${big<36&&$('#nwF').value.startsWith('Rolled')?'Tube, insured':'Crate, insured'}</span></div>`;
+ $('#nwWarn').innerHTML=p<5000?`<div class="success" style="background:var(--warn-soft);color:var(--warn);margin-top:10px"><b>Below our ₹5,000 floor for originals.</b><span>At this price shipping and marketing cost more than the commission. We’ll list it as a print or in a gifting box instead.</span></div>`:''};
+ $$('#addForm input,#addForm select').forEach(i=>i.oninput=upd);upd();
+ $('#addForm').onsubmit=e=>{e.preventDefault();MY_WORKS.push({t:$('#nwT').value,img:null,price:+$('#nwP').value,st:'In curation review'});toast('Sent to curation. Review takes up to 10 working days.');location.hash='desk'}}
+
+/* ---------- studio admin ---------- */
+const APPS=[
+ {n:'Kavya Menon',city:'Thrissur',ig:'@kavya.paints',works:22,range:'₹15,000–45,000',style:'Mural-inspired figurative',st:'pending',days:3},
+ {n:'Rohan Dutta',city:'Shantiniketan',ig:'@rohan_d_canvas',works:14,range:'₹8,000–30,000',style:'Ink and wash landscapes',st:'pending',days:6},
+ {n:'Zoya Qureshi',city:'Hyderabad',ig:'@zoya.q.studio',works:31,range:'₹20,000–90,000',style:'Large abstracts',st:'pending',days:1},
+ {n:'Harpreet Gill',city:'Amritsar',ig:'@gill.art',works:11,range:'₹3,000–6,000',style:'Phulkari patterns',st:'pending',days:8},
+ {n:'Anusha Rao',city:'Mysuru',ig:'@anusha.rao.art',works:18,range:'₹12,000–40,000',style:'Mysore-style gold work',st:'approved',days:12}];
+const ORDER_ST=['Paid','Packed','Shipped','Delivered','Return window','Payout released'];
+const ORDERS=[
+ {id:'TCC-48215',w:'w16',buyer:'Pune',val:24500,st:0},{id:'TCC-48209',w:'w5',buyer:'Bengaluru',val:34000,st:1},{id:'TCC-48203',w:'w1',buyer:'Kolkata',val:3999,st:2,print:true},
+ {id:'TCC-48190',w:'w3',buyer:'Mumbai',val:18500,st:3},{id:'TCC-48177',w:'w1',buyer:'Gurugram',val:42000,st:4},{id:'TCC-48112',w:'w10',buyer:'New Delhi',val:16500,st:5}];
+const LEAD_ST=['New','Site visit','Proposal','Won'];
+const LEADS=[
+ {n:'Brew Theory Café, Hauz Khas',type:'Café curation',pcs:9,val:210000,st:3},
+ {n:'Lumen Co-work, Salt Lake',type:'Office curation',pcs:12,val:330000,st:2},
+ {n:'At Stay, Chittaranjan Park',type:'Homestay rental',pcs:6,val:180000,st:3},
+ {n:'Studio Ochre Interiors',type:'Designer trade',pcs:5,val:150000,st:1},
+ {n:'Kesar Boutique Hotel, Jaipur',type:'Hotel rental',pcs:24,val:720000,st:0},
+ {n:'Fintrail Pvt Ltd',type:'Diwali gifting',pcs:120,val:420000,st:0}];
+let studioTab='overview';
+
+V.studio=()=>{const signed=19,shot=96,orders=ORDERS.length+21,won=LEADS.filter(l=>l.st===3).length;
+ return `<div class="dash-head"><div><span class="eyebrow">Studio admin · CEO &amp; Chief Curator view</span><h2>Where we are</h2><p class="muted">Phase 1 · Set-up (Dec 2026 – Feb 2027). We move to the next phase only when its gate is met.</p></div><span class="chip warn">Gate 1: Launch-ready · in progress</span></div>
+ <div class="kpis">
+  <div class="kpi"><span>Founding artists signed</span><b>${signed} / 25</b><div class="bar"><i style="width:${signed/25*100}%"></i></div><small>Gate 1 target: 25</small></div>
+  <div class="kpi"><span>Works shot at Asind Studio</span><b>${shot} / 150</b><div class="bar"><i style="width:${shot/150*100}%"></i></div><small>Gate 1 target: 150</small></div>
+  <div class="kpi"><span>Orders (soft launch)</span><b>${orders} / 40</b><div class="bar haldi"><i style="width:${orders/40*100}%"></i></div><small>Gate 2: 40 orders in 90 days</small></div>
+  <div class="kpi"><span>Paid B2B contracts</span><b>${won} / 3</b><div class="bar haldi"><i style="width:${won/3*100}%"></i></div><small>Gate 3: B2B proven</small></div>
+ </div>
+ <section style="margin-top:32px"><h3 style="margin-bottom:14px">12-month roadmap</h3><div class="phases">
+  ${[['Set-up','Dec 2026 – Feb 2027',['Register company','Founders’ agreement','Hire Operations Lead','Sign 25 artists','Shoot 150 works'],'Launch-ready · 25 artists, 150 works',true],
+     ['Launch','Mar – May 2027',['Store live, month 4','Launch campaign','Canvas prints live','Delhi NCR pop-up'],'Market signal · 40 orders in 90 days'],
+     ['Grow B2B','Jun – Aug 2027',['Office, café curation','Art on At Stay walls','Kolkata pop-up','Art rental pilot'],'B2B proven · 3 paid contracts'],
+     ['Scale','Sep – Nov 2027',['Diwali gifting boxes','75 artists on roster','Bangalore B2B pilot','Decide on custom tech'],'']]
+   .map(([t,d,items,gate,now])=>`<div class="phase ${now?'now':''}"><b>${t}</b><span class="mono muted" style="font-size:11.5px">${d}</span><ul>${items.map(i=>`<li>${i}</li>`).join('')}</ul>${gate?`<div class="gate">GATE → ${gate}</div>`:''}</div>`).join('')}
+ </div></section>
+ <section class="split" style="margin-top:32px">
+  <div class="panel"><h3>Needs your call</h3><div class="list">
+   <div class="li"><span>${APPS.filter(a=>a.st==='pending').length} artist applications waiting</span><a class="btn ghost sm" href="#studio-curation">Review</a></div>
+   <div class="li"><span>${ORDERS.filter(o=>o.st===0).length} paid order not yet packed</span><a class="btn ghost sm" href="#studio-orders">Open</a></div>
+   <div class="li"><span>${LEADS.filter(l=>l.st===0).length} new B2B leads</span><a class="btn ghost sm" href="#studio-b2b">Open</a></div></div></div>
+  <div class="panel"><h3>Ecosystem services this month</h3><p class="muted" style="font-size:13px">Billed monthly under written service agreements, so each company’s books stay separate.</p><div class="list">
+   <div class="li"><span><b>At Buzz</b> · launch films, Meta ads</span><span class="mono">${inr(85000)}</span></div>
+   <div class="li"><span><b>Asind Studio</b> · 46 works shot</span><span class="mono">${inr(55200)}</span></div>
+   <div class="li"><span><b>Atraski Events</b> · pop-up planning</span><span class="mono">${inr(40000)}</span></div>
+   <div class="li"><span><b>ATT</b> · Shopify multi-vendor set-up</span><span class="mono">${inr(60000)}</span></div></div></div>
+ </section>`};
+
+V['studio-curation']=()=>`<div class="dash-head"><div><span class="eyebrow">Studio admin</span><h2>Curation queue</h2><p class="muted">Review each portfolio for style, finish quality and realistic pricing within 10 working days.</p></div></div>
+ <div class="tbl-wrap"><table><thead><tr><th>Artist</th><th>City</th><th>Style</th><th class="r">Canvases</th><th>Price range</th><th>Waiting</th><th>Decision</th></tr></thead><tbody>
+ ${APPS.map((a,i)=>`<tr><td><b>${a.n}</b><br><span class="muted mono" style="font-size:12px">${a.ig}</span></td><td>${a.city}</td><td>${a.style}</td><td class="r mono">${a.works}</td><td class="mono">${a.range}${a.range.startsWith('₹3')||a.range.startsWith('Under')?' <span class="chip warn">below floor</span>':''}</td><td>${a.days>8?`<span class="chip bad">${a.days} days</span>`:`<span class="mono">${a.days} days</span>`}</td>
+  <td>${a.st==='pending'?`<div style="display:flex;gap:6px"><button class="btn sm" onclick="decide(${i},'approved')">Approve</button><button class="btn ghost sm" onclick="decide(${i},'declined')">Decline</button></div>`:`<span class="chip ${a.st==='approved'?'good':'bad'}">${a.st==='approved'?'Approved · Roster':'Declined'}</span>`}</td></tr>`).join('')}
+ </tbody></table></div>`;
+function decide(i,s){APPS[i].st=s;toast(s==='approved'?APPS[i].n+' approved. Consignment agreement sent.':APPS[i].n+' declined with feedback.');render()}
+
+V['studio-orders']=()=>`<div class="dash-head"><div><span class="eyebrow">Studio admin</span><h2>Orders</h2><p class="muted">Rolled in tubes under 36 in unframed; crated if stretched or framed; insured above ₹10,000. Artist paid within 15 days after the 7-day return window.</p></div></div>
+ <div class="tbl-wrap"><table><thead><tr><th>Order</th><th>Work</th><th>Buyer city</th><th class="r">Value</th><th class="r">Artist share</th><th>Status</th><th></th></tr></thead><tbody>
+ ${ORDERS.map((o,i)=>{const w=WORKS.find(x=>x.id===o.w),a=ARTISTS[w.a],share=o.print?o.val*.2:o.val*(a.tier==='Founding'?.75:.7);return `<tr><td class="mono">${o.id}</td><td style="display:flex;gap:10px;align-items:center"><img class="thumb" src="${IMG[o.w]}" alt=""><span>${w.t}${o.print?' · print':''}<br><span class="muted" style="font-size:12px">${a.name}</span></span></td><td>${o.buyer}</td><td class="r mono">${inr(o.val)}</td><td class="r mono">${inr(share)}</td>
+  <td><span class="chip ${o.st===5?'good':o.st===4?'warn':''}">${ORDER_ST[o.st]}</span></td><td>${o.st<5?`<button class="btn ghost sm" onclick="ORDERS[${i}].st++;render();toast('${o.id} moved to ${ORDER_ST[Math.min(o.st+1,5)]}')">Mark ${ORDER_ST[o.st+1]}</button>`:''}</td></tr>`}).join('')}
+ </tbody></table></div>`;
+
+V['studio-b2b']=()=>`<div class="dash-head"><div><span class="eyebrow">Studio admin</span><h2>B2B pipeline</h2><p class="muted">Offices, cafés, hotels, designers and gifting. Pipeline value: <b class="mono">${inr(LEADS.reduce((s,l)=>s+l.val,0))}</b></p></div></div>
+ <div class="kanban">${LEAD_ST.map((s,si)=>{const ls=LEADS.map((l,i)=>[l,i]).filter(([l])=>l.st===si);return `<div class="col"><h4><span>${s}</span><span>${ls.length}</span></h4>
+  ${ls.map(([l,i])=>`<div class="leadcard"><b>${l.n}</b><span class="muted">${l.type} · ${l.pcs} pcs</span><span class="mono">${inr(l.val)}</span>${si<3?`<div class="actions"><button class="btn ghost sm" onclick="LEADS[${i}].st++;render()">Move to ${LEAD_ST[si+1]}</button></div>`:''}</div>`).join('')}</div>`}).join('')}</div>`;
+
+let econ={price:20000,comm:30};
+function shipCost(p){const pts=[[5000,600],[20000,1200],[60000,2500],[150000,4500]];return interp(p,pts)}
+function mktCost(p){const pts=[[5000,800],[20000,2000],[60000,4000],[150000,7000]];return interp(p,pts)}
+function interp(x,pts){if(x<=pts[0][0])return pts[0][1]*x/pts[0][0];for(let i=1;i<pts.length;i++){const[a,b]=[pts[i-1],pts[i]];if(x<=b[0])return a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0])}return pts[pts.length-1][1]}
+V['studio-econ']=()=>`<div class="dash-head"><div><span class="eyebrow">Studio admin</span><h2>Unit economics per order</h2><p class="muted">Planning assumptions excluding GST, to be replaced with real courier and ad quotes. Below roughly ₹5,000 an original makes no money.</p></div></div>
+ <div class="econ"><div class="panel">
+  <div class="field"><label for="ePrice">Canvas price: <b id="ePv"></b></label><input type="range" id="ePrice" min="2000" max="150000" step="500" value="${econ.price}"></div>
+  <div class="field"><label for="eComm">Commission: <b id="eCv"></b></label><input type="range" id="eComm" min="20" max="35" step="1" value="${econ.comm}"><span class="hint">Mojarto ~20% · founding 25% · standard 30% · Saatchi Art ~35%</span></div>
+  <div id="eRows"></div></div>
+  <div class="panel"><h3>Contribution by order value</h3><div id="eChart"></div><p class="muted" style="font-size:13px">Two levers move this most: a higher average order (canvases of ₹15,000+ and curated sets) and B2B projects, where one contract for 20 pieces carries a single sales cost.</p></div></div>`;
+function bindEcon(){const upd=()=>{econ.price=+$('#ePrice').value;econ.comm=+$('#eComm').value;const p=econ.price,c=p*econ.comm/100,gw=p*.02,sh=shipCost(p),mk=mktCost(p),net=c-gw-sh-mk;
+  $('#ePv').textContent=inr(p);$('#eCv').textContent=econ.comm+'%';
+  $('#eRows').innerHTML=`<div class="econ-row"><span>Our commission</span><span>${inr(c)}</span></div><div class="econ-row"><span>Payment gateway (~2%)</span><span class="neg">−${inr(gw).slice(1)}</span></div><div class="econ-row"><span>Packing, shipping, insurance</span><span class="neg">−${inr(sh).slice(1)}</span></div><div class="econ-row"><span>Marketing cost per order</span><span class="neg">−${inr(mk).slice(1)}</span></div><div class="econ-row total"><span>Contribution</span><span class="${net>=0?'pos':'neg'}">${net<0?'−':''}${inr(Math.abs(net))}</span></div>`;
+  drawChart()};$('#ePrice').oninput=upd;$('#eComm').oninput=upd;upd()}
+function drawChart(){const W=460,H=230,L=52,B=34,T=12,R=12,xs=[];for(let p=2000;p<=150000;p+=2000)xs.push(p);
+ const f=p=>p*econ.comm/100-p*.02-shipCost(p)-mktCost(p),ys=xs.map(f),ymax=Math.ceil(Math.max(...ys)/5000)*5000,ymin=-5000;
+ const X=p=>L+(p-2000)/(148000)*(W-L-R),Y=v=>T+(ymax-v)/(ymax-ymin)*(H-T-B);
+ let grid='';for(let v=ymin;v<=ymax;v+=5000){grid+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="${v===0?1.5:1}"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${v/1000}k</text>`}
+ [5000,20000,60000,150000].forEach(p=>grid+=`<text x="${X(p)}" y="${H-12}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace">₹${p/1000}k</text>`);
+ const path=xs.map((p,i)=>(i?'L':'M')+X(p).toFixed(1)+' '+Y(ys[i]).toFixed(1)).join(' ');
+ const area=path+` L${X(150000)} ${Y(0)} L${X(2000)} ${Y(0)} Z`;
+ const cp=econ.price,cv=f(cp);
+ $('#eChart').innerHTML=`<div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block" role="img" aria-label="Contribution per order by canvas price">${grid}<path d="${area}" fill="var(--indigo-soft)"/><path d="${path}" fill="none" stroke="var(--indigo)" stroke-width="2.2"/><line x1="${X(cp)}" x2="${X(cp)}" y1="${T}" y2="${H-B}" stroke="var(--haldi)" stroke-dasharray="3 3"/><circle cx="${X(cp)}" cy="${Y(cv)}" r="5" fill="var(--haldi)" stroke="var(--paper)" stroke-width="2"/><text x="${Math.min(X(cp)+8,W-90)}" y="${Math.max(Y(cv)-8,T+10)}" font-size="11" fill="var(--ink)" font-family="IBM Plex Mono,monospace">${cv<0?'−':''}${inr(Math.abs(cv))}</text></svg></div>`}
+
+/* ---------- marketplace format ---------- */
+const STYLE_OF={fields:'Colour field',strokes:'Abstract',orbs:'Landscape',waves:'Landscape',grid:'Folk & pattern',arches:'Architecture'};
+const SUBJ={w1:'Rivers & water',w2:'Cities',w3:'Pattern',w4:'Rivers & water',w5:'Mountains',w6:'Cities',w7:'Folk stories',w8:'Architecture',w9:'Colour',w10:'Rivers & water',w11:'Mountains',w12:'Architecture',w13:'Folk stories',w14:'Rivers & water',w15:'Nature',w16:'Cities'};
+const medOf=w=>({Acrylic:'Acrylic',Oil:'Oil',Mixed:'Mixed media',Natural:'Natural pigment'})[w.med.split(' ')[0]];
+const orientOf=w=>w.w>w.h?'Landscape':w.w<w.h?'Portrait':'Square';
+WORKS.forEach(w=>{w.styleN=STYLE_OF[w.style];w.subj=SUBJ[w.id];w.medium=medOf(w);w.orient=orientOf(w)});
+let favs=new Set(store.get('cc_favs',[]));
+function fav(id,el){favs.has(id)?favs.delete(id):favs.add(id);store.set('cc_favs',[...favs]);el.classList.toggle('on',favs.has(id));toast(favs.has(id)?'Saved to favourites':'Removed from favourites')}
+function showFavs(){const l=[...favs].map(W_).filter(Boolean);$('#dlgBody').innerHTML=`<div style="padding:28px;display:grid;gap:18px"><h2>Favourites</h2>${l.length?`<div class="masonry" style="columns:3 180px">${l.map(acard).join('')}</div>`:'<p class="muted">Tap the heart on any artwork to save it here.</p>'}</div>`;dlg.showModal()}
+const HEART='<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg>';
+function acard(w){const a=ARTISTS[w.a];return `<div class="acard" role="button" tabindex="0" onclick="openWork('${w.id}')" onkeydown="if(event.key==='Enter')openWork('${w.id}')">
+ <div class="im"><img src="${IMG[w.id]}" alt="${w.t} by ${a.name}" loading="lazy">${a.tier!=='Roster'?`<span class="badge">${tierChip(a.tier)}</span>`:''}<button class="heart ${favs.has(w.id)?'on':''}" aria-label="Save ${w.t}" onclick="event.stopPropagation();fav('${w.id}',this)">${HEART}</button><span class="vir" onclick="event.stopPropagation();openWork('${w.id}');document.getElementById('vRoom')?.click()">View in a room</span></div>
+ <div class="t1"><span>${w.t}</span></div>
+ <div class="ln"><b>${a.name}</b> · ${a.city}, India</div>
+ <div class="ln">Painting, ${w.med}</div>
+ <div class="ln">Size: ${cm(w.w)} W x ${cm(w.h)} H x 4 D cm</div>
+ <div class="pr">${w.sold?'<b style="color:var(--accent)">Sold</b>':`<b class="num">${inr(w.price)}</b>`}${w.prints?`<span class="print">Prints from ${inr(2499)}</span>`:''}</div></div>`}
+function card(w){return acard(w)}
+
+/* mega nav */
+const MEGA_P=`<div class="mega inner">
+ <div><h5>Style</h5>${['Abstract','Colour field','Landscape','Folk & pattern','Architecture'].map(s=>`<a href="#shop" onclick="goShop('style','${s}');return false">${s}</a>`).join('')}</div>
+ <div><h5>Subject</h5>${['Rivers & water','Mountains','Cities','Folk stories','Architecture','Nature'].map(s=>`<a href="#shop" onclick="goShop('subject','${s}');return false">${s}</a>`).join('')}</div>
+ <div><h5>Medium</h5>${['Oil','Acrylic','Mixed media','Natural pigment'].map(s=>`<a href="#shop" onclick="goShop('medium','${s}');return false">${s}</a>`).join('')}</div>
+ <div><h5>Price</h5>${[['u15','Under ₹15,000'],['15-40','₹15,000–40,000'],['40+','₹40,000 and above']].map(([k,l])=>`<a href="#shop" onclick="goShop('price','${k}');return false">${l}</a>`).join('')}<h5 style="margin-top:16px">Size</h5>${[['small','Small'],['medium','Medium'],['large','Large (36 in +)']].map(([k,l])=>`<a href="#shop" onclick="goShop('size','${k}');return false">${l}</a>`).join('')}</div>
+ <div class="feat-img" onclick="goShop('tier','Founding')"><img src="${IMG.w7}" alt=""><b>Founding Artists Collection</b><span>25 artists, hand-picked by our Chief Curator</span></div></div>`;
+const MEGA_S=`<div class="mega inner">
+ <div><h5>Buy for a space</h5><a href="#business" onclick="bizTab='offices'">Offices &amp; cafés</a><a href="#rental">Hotels &amp; homestays</a><a href="#business" onclick="bizTab='designers'">Interior designers</a></div>
+ <div><h5>Rent and rotate</h5><a href="#rental">Rental calculator</a><a href="#rental">Rotate every 3–6 months</a><a href="#rental">Buy off the wall</a></div>
+ <div><h5>Gifting</h5><a href="#gifting">Diwali 2027 boxes</a><a href="#gifting">Leadership gifts</a><a href="#gifting">Volume pricing</a></div>
+ <div><h5>Talk to us</h5><a href="#commission">Free art advice</a><a href="#commission">Commission a piece</a></div>
+ <div class="feat-img" onclick="location.hash='business'"><img src="${IMG.w12}" alt=""><b>Art for spaces</b><span>Curation fee from ₹15,000 per project</span></div></div>`;
+function megaNav(v){return `<div class="mi"><a href="#shop" class="${v==='shop'?'on':''}">Paintings</a>${MEGA_P}</div>
+ <div class="mi"><a href="#artists" class="${v==='artists'?'on':''}">Artists</a></div>
+ <div class="mi"><a href="#shop" onclick="goShop('tier','Founding');return false">Collections</a></div>
+ <div class="mi"><a href="#commission" class="${v==='commission'?'on':''}">Commissions</a></div>
+ <div class="mi"><a href="#business" class="${['business','rental'].includes(v)?'on':''}">Art for spaces</a>${MEGA_S}</div>
+ <div class="mi"><a href="#gifting" class="${v==='gifting'?'on':''}">Gifting</a></div>
+ <div class="mi"><a href="#commission" class="red">Free art advice</a></div>`}
+
+/* hero carousel */
+let heroI=0;
+const SLIDES=[
+ {k:'Collection',h:'The Founding Artists',p:'25 independent artists, hand-picked by our Chief Curator. Original canvases from ₹5,000, each signed and certified.',b:'Shop the collection',go:"goShop('tier','Founding')",art:()=>scene([{id:'w3',x:12,y:12,w:20,fin:'wood',mount:true},{id:'w15',x:13,y:47,w:17,fin:'wood',mount:true},{id:'w2',x:38,y:13,w:44}],{shaft:2,hot:{id:'w2',x:60,y:33},lamp:[84,4],plant:4,cap:'Fog over Lodhi, II · Arjun Kalra'})},
+ {k:'New collection',h:'Rivers & Monsoons',p:'The Hooghly at dusk, Kuttanad after rain, the Ganga at low tide. Water, painted by artists who live beside it.',b:'Explore rivers & water',go:"goShop('subject','Rivers & water')",art:()=>`<div class="crop"><img src="${IMG.w4}" alt=""><div><img src="${IMG.w1}" alt=""><img src="${IMG.w10}" alt=""></div></div>`},
+ {k:'For business',h:'Art for spaces people remember',p:'Curated walls for offices, cafés, homestays and hotels. Buy outright or rent and rotate every 3–6 months.',b:'Art for your space',go:"location.hash='business'",art:()=>scene([{id:'w11',x:14,y:14,w:72}],{furn:'sofa',sofa:[18,64],lamp:[84,0],plant:6,shaft:40,cap:'Ridge Line, Nathula · Tenzin Dolma'})}];
+function heroHTML(){return SLIDES.map((s,i)=>`<div class="slide" data-slide="${i}" ${i===heroI?'':'hidden'}><div class="txt"><span class="eyebrow">${s.k}</span><h1>${s.h}</h1><p>${s.p}</p><div><button class="btn" onclick="${s.go}">${s.b}</button></div></div><div class="art">${s.art()}</div></div>`).join('')+
+ `<div class="dots">${SLIDES.map((s,i)=>`<button aria-label="Slide ${i+1}" class="${i===heroI?'on':''}" onclick="hero(${i})"></button>`).join('')}</div><div class="hero-arr"><button aria-label="Previous slide" onclick="hero(heroI-1)">‹</button><button aria-label="Next slide" onclick="hero(heroI+1)">›</button></div>`}
+function hero(i){heroI=(i+SLIDES.length)%SLIDES.length;$$('[data-slide]').forEach(s=>s.hidden=+s.dataset.slide!==heroI);$$('.dots button').forEach((b,j)=>b.classList.toggle('on',j===heroI))}
+setInterval(()=>{if(document.querySelector('[data-slide]')&&!document.querySelector('.hero-c:hover'))hero(heroI+1)},6500);
+function row(id,title,sub,ids,link){return `<section class="blk"><div class="inner"><div class="rowhead"><div><h2>${title}</h2><p>${sub}</p></div><div class="arrows">${link||''}<button aria-label="Scroll left" onclick="document.getElementById('${id}').scrollBy({left:-600,behavior:'smooth'})">‹</button><button aria-label="Scroll right" onclick="document.getElementById('${id}').scrollBy({left:600,behavior:'smooth'})">›</button></div></div><div class="hscroll" id="${id}">${ids.map(i=>acard(W_(i))).join('')}</div></div></section>`}
+
+V.home=()=>{const ow='td',oa=ARTISTS[ow],ows=WORKS.filter(w=>w.a===ow);
+ return `<section class="hero-c">${heroHTML()}</section>
+ <section class="blk"><div class="inner"><div class="rowhead"><div><h2>Shop by price</h2><p>Original canvases for every wall and budget</p></div></div>
+  <div class="ptiles">${[['u15','Under ₹15,000','First originals and gifts','w8'],['15-40','₹15,000 – ₹40,000','Our most popular range','w4'],['40+','₹40,000 and above','Statement pieces','w2'],['large','Large works','36 in and wider','w11']].map(([k,l,s,img])=>`<button class="ptile" onclick="goShop('${k==='large'?'size':'price'}','${k}')"><span class="im"><img src="${IMG[img]}" alt=""></span><b>${l}</b><span>${s}</span></button>`).join('')}</div></div></section>
+ ${row('trend','Trending now','The works collectors are saving this week',['w1','w7','w9','w5','w12','w4','w3','w11'],'<a href="#shop">View all</a>')}
+ <section class="blk"><div class="inner"><div class="rowhead"><div><h2>Featured collections</h2><p>Hand-picked by our curators</p></div><div class="arrows"><a href="#shop">View all collections</a></div></div>
+  <div class="colls">${[['Founding Artists','tier','Founding',['w7','w5','w3']],['Rivers & Water','subject','Rivers & water',['w1','w4','w10']],['Colour Field','style','Colour field',['w2','w9','w14']],['Arches & Cities','subject','Architecture',['w12','w8','w16']]].map(([t,k,v,ids])=>`<button class="cl" onclick="goShop('${k}','${v}')"><span class="mos">${ids.map(i=>`<img src="${IMG[i]}" alt="">`).join('')}</span><b>${t}</b><span>Curated by The Canvas Commons · ${WORKS.filter(w=>(k==='tier'?ARTISTS[w.a].tier:k==='style'?w.styleN:w.subj)===v).length} works</span></button>`).join('')}</div></div></section>
+ <section class="blk"><div class="inner"><div class="advice">
+  ${scene([{id:'w9',x:30,y:12,w:40,fin:'black'}],{furn:'sofa',sofa:[16,68],lamp:[8,0],plant:84,shaft:50})}
+  <div class="txt"><span class="eyebrow" style="color:var(--accent)">Free art advice</span><h2>Not sure what fits your wall? Ask a curator.</h2><p class="muted">Tell us about your room and budget. A curator sends you a free shortlist within 48 hours, shown on a photo of your own wall.</p>
+   <ol><li><span><b>Share your space</b>A photo, wall size and budget</span></li><li><span><b>Get a shortlist</b>6–10 works matched to your room, free</span></li><li><span><b>Buy, rent or commission</b>No obligation, ever</span></li></ol>
+   <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><a class="btn" href="#commission">Get free advice</a><a class="link-u" href="#business">For businesses</a></div></div></div></div></section>
+ ${row('newin','New this week','Fresh from the studio, shot at Asind Studio',['w16','w15','w13','w6','w10','w8','w2','w14'])}
+ <section class="blk"><div class="inner"><div class="rowhead"><div><span class="eyebrow" style="color:var(--accent)">One to watch</span></div></div><div class="watch">
+  <div class="big" onclick="openWork('${ows[1].id}')" style="cursor:pointer">${frame(ows[1].id,'white',true)}</div>
+  <div class="txt"><h2>${oa.name}</h2><span class="muted">${oa.city}, India · ${tierChip(oa.tier)}</span><p>${oa.bio} Tenzin grew up between Gangtok and Rumtek and paints the Himalaya in layers of torn colour, the way wind leaves prayer flags. Two of the founding collection’s most-saved works are hers.</p>
+   <div class="thumbs">${ows.map(w=>`<button onclick="openWork('${w.id}')" aria-label="${w.t}"><img src="${IMG[w.id]}" alt=""></button>`).join('')}</div>
+   <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><button class="btn" onclick="goShop('artist','${ow}')">View artist</button><button class="link-u" onclick="toast('Following ${oa.name}')">Follow</button></div></div></div></div></section>
+ <section class="blk"><div class="inner"><div class="rowhead"><div><h2>Inside the studio</h2><p>Stories from our artists and curators</p></div></div>
+  <div class="stories">${[['Studio visit','Rhea Basu paints the ghats of Kolkata, three evenings at a time',`<img src="${IMG.w1}" alt="">`],['Craft','How Madhubani pigments are ground by hand in Darbhanga',`<img src="${IMG.w7}" alt="">`],['Guide','How big should a canvas be above a 7 ft sofa?',scene([{id:'w4',x:24,y:16,w:52}],{furn:'sofa',sofa:[20,60],shaft:10})]].map(([k,t,im])=>`<button class="story" onclick="toast('Stories launch with the live store')"><span class="im">${im}</span><small>${k}</small><b>${t}</b></button>`).join('')}</div></div></section>
+ <section class="blk"><div class="inner"><div class="browse">
+  <div><h4>Shop by style</h4>${['Abstract','Colour field','Landscape','Folk & pattern','Architecture'].map(s=>`<button onclick="goShop('style','${s}')">${s} paintings</button>`).join('')}</div>
+  <div><h4>Shop by subject</h4>${['Rivers & water','Mountains','Cities','Folk stories','Nature'].map(s=>`<button onclick="goShop('subject','${s}')">${s}</button>`).join('')}</div>
+  <div><h4>Shop by medium</h4>${['Oil','Acrylic','Mixed media','Natural pigment'].map(s=>`<button onclick="goShop('medium','${s}')">${s} on canvas</button>`).join('')}</div>
+  <div><h4>Shop by room</h4>${[['living','Living room'],['bedroom','Bedroom'],['office','Office'],['cafe','Café'],['hotel','Hotel & homestay']].map(([k,l])=>`<button onclick="goShop('room','${k}')">${l}</button>`).join('')}</div></div></div></section>
+ <section class="blk"><div class="inner"><div class="trustrow">
+  <div>${ICON.back}<span><b>7-day returns</b>Damaged or not as pictured? Send it back.</span></div>
+  <div>${ICON.truck}<span><b>Free insured shipping</b>Tracked across India, insured above ₹10,000</span></div>
+  <div><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="1"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span><b>Secure payments</b>UPI, cards and net banking via Razorpay</span></div>
+  <div>${ICON.cert}<span><b>Certificate of authenticity</b>Signed and numbered by the artist</span></div></div></div></section>`};
+
+/* shop */
+const FACETS=[['price','Price',[['all','Any price'],['u15','Under ₹15,000'],['15-40','₹15,000–40,000'],['40+','₹40,000 and above']]],
+ ['style','Style',[['all','All styles'],...['Abstract','Colour field','Landscape','Folk & pattern','Architecture'].map(s=>[s,s])]],
+ ['subject','Subject',[['all','All subjects'],...['Rivers & water','Mountains','Cities','Folk stories','Architecture','Nature','Pattern','Colour'].map(s=>[s,s])]],
+ ['medium','Medium',[['all','All mediums'],...['Oil','Acrylic','Mixed media','Natural pigment'].map(s=>[s,s])]],
+ ['size','Size',[['all','Any size'],['small','Small (under 24 in)'],['medium','Medium (24–35 in)'],['large','Large (36 in +)']]],
+ ['orient','Orientation',[['all','Any'],['Landscape','Landscape'],['Portrait','Portrait'],['Square','Square']]],
+ ['room','Room',[['all','Any room'],['living','Living room'],['bedroom','Bedroom'],['office','Office'],['cafe','Café / restaurant'],['hotel','Hotel / homestay']]],
+ ['tier','Artist tier',[['all','All artists'],['Founding','Founding'],['Signature','Signature'],['Roster','Roster']]]];
+const DEF_F={q:'',price:'all',style:'all',subject:'all',medium:'all',size:'all',orient:'all',room:'all',tier:'all'};
+Object.assign(shopF,DEF_F,{sort:'featured'});
+V.shop=()=>`<div class="crumbs"><a href="#home">Home</a> / Original paintings</div>
+ <div class="rowhead"><div><h1 style="font-size:clamp(28px,3vw,38px)">Original canvas paintings for sale</h1><p>Every work is one of a kind, signed by the artist, and ships insured with a certificate of authenticity.</p></div></div>
+ <div class="shop">
+  <aside class="filters">${FACETS.map(([k,l,opts])=>`<fieldset><legend>${l}</legend>${opts.map(([v,t])=>`<label><input type="radio" name="${k}" value="${v}" ${shopF[k]===v?'checked':''}> ${t}</label>`).join('')}</fieldset>`).join('')}</aside>
+  <div style="min-width:0">
+   <div class="toolbar"><input class="input" id="q" placeholder="Search within results" value="${shopF.q.replace(/"/g,'&quot;')}"><div style="display:flex;gap:12px;align-items:center"><span class="muted" id="count"></span><select class="input" id="sort" style="width:auto" aria-label="Sort"><option value="featured">Sort: Featured</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option><option value="big">Largest first</option></select></div></div>
+   <div class="active-f" id="activeF"></div>
+   <div class="masonry" id="shopGrid"></div>
+   <div class="pager"><button class="on">1</button><button onclick="toast('More works arrive as the roster grows to 150')">2</button><button onclick="toast('More works arrive as the roster grows to 150')">›</button></div>
+  </div></div>`;
+filtered=function(){
+ let r=WORKS.filter(w=>{const a=ARTISTS[w.a],q=shopF.q.toLowerCase(),L=Math.max(w.w,w.h);
+  if(q&&!(w.t+' '+a.name+' '+a.city+' '+w.styleN+' '+w.subj+' '+w.medium).toLowerCase().includes(q))return false;
+  if(shopF.artist&&w.a!==shopF.artist)return false;
+  if(shopF.price==='u15'&&w.price>=15000)return false;if(shopF.price==='15-40'&&(w.price<15000||w.price>40000))return false;if(shopF.price==='40+'&&w.price<40000)return false;
+  if(shopF.size==='small'&&L>=24)return false;if(shopF.size==='medium'&&(L<24||L>=36))return false;if(shopF.size==='large'&&L<36)return false;
+  if(shopF.style!=='all'&&w.styleN!==shopF.style)return false;if(shopF.subject!=='all'&&w.subj!==shopF.subject)return false;
+  if(shopF.medium!=='all'&&w.medium!==shopF.medium)return false;if(shopF.orient!=='all'&&w.orient!==shopF.orient)return false;
+  if(shopF.room!=='all'&&!w.rooms.includes(shopF.room))return false;if(shopF.tier!=='all'&&a.tier!==shopF.tier)return false;return true});
+ if(shopF.sort==='low')r.sort((a,b)=>a.price-b.price);if(shopF.sort==='high')r.sort((a,b)=>b.price-a.price);if(shopF.sort==='big')r.sort((a,b)=>b.w*b.h-a.w*a.h);
+ return r};
+drawShop=function(){const r=filtered();$('#shopGrid').innerHTML=r.length?r.map(acard).join(''):'<div class="empty">No works match these filters. Clear a filter, or <a href="#commission">ask a curator for free advice</a>.</div>';$('#count').textContent=r.length+' artworks';
+ const act=FACETS.filter(([k])=>shopF[k]!=='all').map(([k,l,o])=>[k,o.find(x=>x[0]===shopF[k])[1]]);if(shopF.artist)act.push(['artist',ARTISTS[shopF.artist].name]);if(shopF.q)act.push(['q','“'+shopF.q+'”']);
+ $('#activeF').innerHTML=act.map(([k,t])=>`<button onclick="${k==='artist'?'delete shopF.artist':k==='q'?"shopF.q=''":`shopF['${k}']='all'`};render()">${t} ✕</button>`).join('')+(act.length>1?`<button onclick="goShop('q','')">Clear all</button>`:'')};
+goShop=function(k,v){Object.assign(shopF,DEF_F);delete shopF.artist;shopF[k]=v;if(location.hash==='#shop')render();else location.hash='shop'};
+
+/* ---------- router ---------- */
+const BIND={gifting:bindBusiness,rental:bindBusiness,shop:bindShop,commission:bindCommission,business:bindBusiness,artists:bindArtists,'desk-add':bindAdd,'studio-econ':bindEcon};
+function viewRole(v){if(v==='desk'||v==='desk-add')return 'artist';if(v.startsWith('studio'))return 'studio';return null}
+function render(){
+  let v=(location.hash||'').slice(1);if(!V[v])v=ROLE_HOME[role];
+  const r=viewRole(v);if(r&&r!==role){role=r;store.set('cc_role',role)}
+  if(!r&&role!=='collector'&&v!=='artists'){role='collector';store.set('cc_role',role)}
+  $$('.seg [data-role]').forEach(b=>b.classList.toggle('on',b.dataset.role===role));
+  $('#nav').innerHTML=role==='collector'?megaNav(v):NAVS[role].map(([k,l])=>`<a href="#${k}" class="${k===v?'on':''}">${l}</a>`).join('');
+  
+  $('#app').innerHTML=`<div class="view ${v==='home'?'':'boxed'}">${V[v]()}</div>`;
+  BIND[v]&&BIND[v]();
+}
+$$('.seg [data-role]').forEach(b=>b.onclick=()=>{role=b.dataset.role;store.set('cc_role',role);const h=ROLE_HOME[role];if(location.hash==='#'+h)render();else location.hash=h});
+$('#cartBtn').onclick=openCart;
+$('#hsearch').onsubmit=e=>{e.preventDefault();goShop('q',$('#hq').value.trim())};
+const dlg=$('#dlg');dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});
+let lastV='';
+window.addEventListener('hashchange',()=>{render();const v=location.hash.slice(1);if(v!==lastV)window.scrollTo(0,0);lastV=v});
+saveCart();render();
+</script>
+
+</body>
+</html>
